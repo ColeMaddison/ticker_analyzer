@@ -1,0 +1,8 @@
+streamlit
+yfinance<1.0
+pandas
+ta
+plotly
+openai
+python-dotenv
+duckduckgo-search
