@@ -6,15 +6,34 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
   if (!data || data.length === 0) return <div>No Chart Data</div>;
 
   // Format data for Recharts
-  const chartData = data.map((d: any) => ({
-    ...d,
-    date: new Date(d.Date).toLocaleDateString(),
-    // Colors for histograms
-    macdColor: d.MACD_Hist >= 0 ? '#22c55e' : '#ef4444',
-    sqzColor: d.SQZ_MOM >= 0 ? '#22c55e' : '#ef4444',
-    // Squeeze dot Y-position (overlay on price)
-    squeezeDot: d.SQZ_ON ? d.Close : null
-  }));
+  const chartData = data.map((d: any) => {
+    const close = d.close ?? d.Close ?? 0;
+    const vwap = d.vwap_weekly ?? d.VWAP_Weekly;
+    const upper = d.bb_upper ?? d.BB_Upper;
+    const lower = d.bb_lower ?? d.BB_Lower;
+    const macd_hist = d.macd_hist ?? d.MACD_Hist ?? 0;
+    const sqz_mom = d.sqz_mom ?? d.SQZ_MOM ?? 0;
+    const sqz_on = d.sqz_on ?? d.SQZ_ON ?? false;
+
+    return {
+      ...d,
+      date: new Date(d.time ?? d.Date).toLocaleDateString(),
+      // Standardized keys for chart
+      displayClose: close,
+      displayVWAP: vwap,
+      displayUpper: upper,
+      displayLower: lower,
+      displaySMI: d.smi ?? d.SMI,
+      displaySMISignal: d.smi_signal ?? d.SMI_SIGNAL,
+      displayMACDHist: macd_hist,
+      displaySQZMom: sqz_mom,
+      // Colors
+      macdColor: macd_hist >= 0 ? '#22c55e' : '#ef4444',
+      sqzColor: sqz_mom >= 0 ? '#22c55e' : '#ef4444',
+      // Squeeze dot Y-position
+      squeezeDot: sqz_on ? close : null
+    };
+  });
 
   return (
     <div className="flex flex-col h-[800px] bg-[#0A0A0A] rounded-lg border border-zinc-800 p-4">
@@ -29,15 +48,15 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
             <YAxis domain={['auto', 'auto']} orientation="right" tick={{fontSize: 12, fill:'#a1a1aa'}} />
             <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#fff'}} />
             
-            {/* Bollinger Cloud Area simulated with lines for now */}
-            <Line type="monotone" dataKey="BB_Upper" stroke="#93c5fd" strokeWidth={1} dot={false} strokeOpacity={0.3} />
-            <Line type="monotone" dataKey="BB_Lower" stroke="#93c5fd" strokeWidth={1} dot={false} strokeOpacity={0.3} />
+            {/* Bollinger Cloud Area */}
+            <Line type="monotone" dataKey="displayUpper" stroke="#93c5fd" strokeWidth={1} dot={false} strokeOpacity={0.3} />
+            <Line type="monotone" dataKey="displayLower" stroke="#93c5fd" strokeWidth={1} dot={false} strokeOpacity={0.3} />
             
             {/* VWAP */}
-            <Line type="monotone" dataKey="VWAP_Weekly" stroke="#fbbf24" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="displayVWAP" stroke="#fbbf24" strokeWidth={2} dot={false} />
             
-            {/* Price Line (simplified from candles for Recharts) */}
-            <Line type="monotone" dataKey="Close" stroke="#fff" strokeWidth={1.5} dot={false} />
+            {/* Price Line */}
+            <Line type="monotone" dataKey="displayClose" stroke="#fff" strokeWidth={1.5} dot={false} />
             
             {/* Squeeze Dots */}
             <Line type="monotone" dataKey="squeezeDot" stroke="#ffffff" strokeWidth={0} dot={{fill: 'white', r: 3}} />
@@ -54,7 +73,7 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
             <XAxis dataKey="date" hide />
             <YAxis orientation="right" tick={{fontSize: 12, fill:'#a1a1aa'}} />
             <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#fff'}} />
-            <Bar dataKey="SQZ_MOM">
+            <Bar dataKey="displaySQZMom">
               {chartData.map((entry: any, index: number) => (
                 <Cell key={`cell-${index}`} fill={entry.sqzColor} />
               ))}
@@ -74,8 +93,8 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
             <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#fff'}} />
             <ReferenceLine y={40} stroke="gray" strokeDasharray="3 3" />
             <ReferenceLine y={-40} stroke="gray" strokeDasharray="3 3" />
-            <Line type="monotone" dataKey="SMI" stroke="#06b6d4" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="SMI_SIGNAL" stroke="#ef4444" dot={false} strokeWidth={1} strokeDasharray="3 3" />
+            <Line type="monotone" dataKey="displaySMI" stroke="#06b6d4" dot={false} strokeWidth={1.5} />
+            <Line type="monotone" dataKey="displaySMISignal" stroke="#ef4444" dot={false} strokeWidth={1} strokeDasharray="3 3" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -89,7 +108,7 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
             <XAxis dataKey="date" tick={{fontSize: 12, fill:'#a1a1aa'}} minTickGap={30} />
             <YAxis orientation="right" tick={{fontSize: 12, fill:'#a1a1aa'}} />
             <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#fff'}} />
-            <Bar dataKey="MACD_Hist">
+            <Bar dataKey="displayMACDHist">
               {chartData.map((entry: any, index: number) => (
                 <Cell key={`cell-${index}`} fill={entry.macdColor} />
               ))}
