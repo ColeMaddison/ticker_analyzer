@@ -1,14 +1,32 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent } from "../ui";
 import { ScannerResult } from "../../types";
-import { Search, Filter, Play, Check, Square, CheckSquare, ArrowUpDown } from "lucide-react";
+import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star } from "lucide-react";
 
-export const ScannerView = ({ data, scanning, onScan, onAnalyze }: { data: ScannerResult[] | null, scanning: boolean, onScan: () => void, onAnalyze: (t: string) => void }) => {
-  const [search, setSearch] = useState("");
-  const [maxRsi, setMaxRsi] = useState<number>(100);
-  const [minRelVol, setMinRelVol] = useState<number>(0);
-  const [onlyStrongBuy, setOnlyStrongBuy] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof ScannerResult; direction: 'asc' | 'desc' }>({ key: 'Upside %', direction: 'desc' });
+export const ScannerView = ({ 
+  data, scanning, onScan, onAnalyze,
+  search, setSearch,
+  maxRsi, setMaxRsi,
+  minRelVol, setMinRelVol,
+  onlyStrongBuy, setOnlyStrongBuy,
+  onlyGoldenSetup, setOnlyGoldenSetup,
+  sortConfig, setSortConfig
+}: { 
+  data: ScannerResult[] | null, 
+  scanning: boolean, 
+  onScan: () => void, 
+  onAnalyze: (t: string) => void,
+  search: string, setSearch: (v: string) => void,
+  maxRsi: number, setMaxRsi: (v: number) => void,
+  minRelVol: number, setMinRelVol: (v: number) => void,
+  onlyStrongBuy: boolean, setOnlyStrongBuy: (v: boolean) => void,
+  onlyGoldenSetup: boolean, setOnlyGoldenSetup: (v: boolean) => void,
+  sortConfig: { key: keyof ScannerResult; direction: 'asc' | 'desc' }, setSortConfig: (v: any) => void
+}) => {
+
+  const isGoldenSetup = (r: ScannerResult) => {
+    return r.Recommendation === "Strong Buy" && r["Upside %"] > 15 && r["Rel Vol"] > 1.2 && r.RSI < 60;
+  };
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -25,12 +43,13 @@ export const ScannerView = ({ data, scanning, onScan, onAnalyze }: { data: Scann
       r.Ticker.includes(search.toUpperCase()) && 
       r.RSI <= maxRsi && 
       r["Rel Vol"] >= minRelVol &&
-      (!onlyStrongBuy || r.Recommendation === 'Strong Buy')
+      (!onlyStrongBuy || r.Recommendation === 'Strong Buy') &&
+      (!onlyGoldenSetup || isGoldenSetup(r))
     );
-  }, [data, search, maxRsi, minRelVol, onlyStrongBuy, sortConfig]);
+  }, [data, search, maxRsi, minRelVol, onlyStrongBuy, onlyGoldenSetup, sortConfig]);
 
   const handleSort = (key: keyof ScannerResult) => {
-    setSortConfig(current => ({
+    setSortConfig((current: any) => ({
       key,
       direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
     }));
@@ -91,6 +110,14 @@ export const ScannerView = ({ data, scanning, onScan, onAnalyze }: { data: Scann
                 {onlyStrongBuy ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                 STRONG BUY
             </button>
+
+            <button 
+                onClick={() => setOnlyGoldenSetup(!onlyGoldenSetup)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${onlyGoldenSetup ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400' : 'bg-zinc-900/50 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+            >
+                {onlyGoldenSetup ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                GOLDEN
+            </button>
          </div>
 
          <button onClick={onScan} className="w-full md:w-auto flex items-center gap-2 text-xs font-bold bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
@@ -125,9 +152,17 @@ export const ScannerView = ({ data, scanning, onScan, onAnalyze }: { data: Scann
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30">
                     {filteredData.map((r, i)=>(
-                    <tr key={r.Ticker} className="hover:bg-zinc-900/40 transition-colors group">
+                    <tr key={r.Ticker} className={`hover:bg-zinc-900/40 transition-colors group ${isGoldenSetup(r) ? 'bg-emerald-500/[0.03]' : ''}`}>
                         <td className="p-3 text-center text-zinc-600 font-mono text-xs">{r.Rank}</td>
-                        <td className="p-3 font-black text-zinc-200 tracking-wide">{r.Ticker}</td>
+                        <td className="p-3 font-black text-zinc-200 tracking-wide flex items-center gap-2">
+                            {r.Ticker}
+                            {isGoldenSetup(r) && (
+                                <div className="flex items-center gap-1">
+                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 animate-pulse" />
+                                    <span className="text-[7px] bg-yellow-500/10 text-yellow-500 px-1 rounded border border-yellow-500/20 font-black tracking-tighter">GOLDEN</span>
+                                </div>
+                            )}
+                        </td>
                         <td className="p-3 text-right font-mono font-medium text-zinc-400">${r.Price.toFixed(2)}</td>
                         <td className="p-3 text-center">
                             <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-black border ${getRecColor(r.Recommendation)}`}>

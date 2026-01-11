@@ -11,13 +11,21 @@ import { useTickerAnalysis } from "../hooks/useTickerAnalysis";
 import { useMarketData } from "../hooks/useMarketData";
 
 export default function Dashboard() {
-  const [inputTicker, setInputTicker] = useState("AAPL");
+  const [inputTicker, setInputTicker] = useState("");
   const { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting } = useTickerAnalysis();
-  const { discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner } = useMarketData();
+  const { 
+    discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner,
+    scannerSearch, setScannerSearch,
+    scannerMaxRsi, setScannerMaxRsi,
+    scannerMinRelVol, setScannerMinRelVol,
+    scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
+    scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
+    scannerSortConfig, setScannerSortConfig
+  } = useMarketData();
 
-  useEffect(() => {
-    analyzeTicker("AAPL");
-  }, []);
+  // useEffect(() => {
+  //   analyzeTicker("AAPL");
+  // }, []);
 
   const handleAnalyze = (t: string) => {
     setInputTicker(t);
@@ -59,8 +67,8 @@ export default function Dashboard() {
           <div className="flex justify-center">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/50 p-1.5 backdrop-blur-sm scale-110 origin-top">
               <TabsTrigger value="analysis" className="gap-2 font-bold text-xs uppercase px-4">📈 Analysis</TabsTrigger>
-              <TabsTrigger value="discovery" onClick={fetchDiscovery} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
-              <TabsTrigger value="scanner" onClick={fetchScanner} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
+              <TabsTrigger value="discovery" onClick={() => fetchDiscovery()} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
+              <TabsTrigger value="scanner" onClick={() => fetchScanner()} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
               <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Strategy</TabsTrigger>
             </TabsList>
           </div>
@@ -82,11 +90,22 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="discovery">
-            <DiscoveryView data={discoveryData} scanning={scanning} onScan={fetchDiscovery} onAnalyze={handleAnalyze} />
+            <DiscoveryView data={discoveryData} scanning={scanning} onScan={() => fetchDiscovery(true)} onAnalyze={handleAnalyze} />
           </TabsContent>
 
           <TabsContent value="scanner">
-            <ScannerView data={scannerData} scanning={scanning} onScan={fetchScanner} onAnalyze={handleAnalyze} />
+            <ScannerView 
+              data={scannerData} 
+              scanning={scanning} 
+              onScan={() => fetchScanner(true)} 
+              onAnalyze={handleAnalyze}
+              search={scannerSearch} setSearch={setScannerSearch}
+              maxRsi={scannerMaxRsi} setMaxRsi={setScannerMaxRsi}
+              minRelVol={scannerMinRelVol} setMinRelVol={setScannerMinRelVol}
+              onlyStrongBuy={scannerOnlyStrongBuy} setOnlyStrongBuy={setScannerOnlyStrongBuy}
+              onlyGoldenSetup={scannerOnlyGoldenSetup} setOnlyGoldenSetup={setScannerOnlyGoldenSetup}
+              sortConfig={scannerSortConfig} setSortConfig={setScannerSortConfig}
+            />
           </TabsContent>
 
           <TabsContent value="strategy">

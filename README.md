@@ -1,63 +1,66 @@
 # 🤖 AI Ticker Analyzer Pro
 
-**Institutional-Grade Market Intelligence Terminal**
+**Institutional-Grade Market Intelligence & Strategy Validation Terminal**
 
-A professional-grade dashboard that combines **Technical Analysis**, **Smart Money Flow**, **Fundamental Quality**, and **Alternative Data** to deliver high-conviction trading signals. Designed to bridge the gap between retail timing and institutional value.
+A professional-grade dashboard that aggregates **Technical Momentum**, **Institutional Flow (Smart Money)**, **Fundamental Quality**, and **Macro Alpha** to deliver high-conviction trading signals. Powered by `finvizfinance` for robust, real-time data and a proprietary AI Council for strategic reasoning.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688) ![Tailwind](https://img.shields.io/badge/Tailwind-3.3-38B2AC) ![OpenAI](https://img.shields.io/badge/AI-OpenRouter-orange)
-
----
-
-## 🚀 The Multi-Engine Analysis Hub
-
-At the heart of the terminal is **The Beast Score (0-100)**, a decision matrix that aggregates five specialized engines into a single actionable output.
-
-### 1. **[T] Technicals**
-*   **RSI Regimes**: Focus on 40 (Bull Support) and 60 (Bear Resistance) shift points.
-*   **MACD Divergence**: Automated detection of price vs. momentum exhaustion.
-*   **SMI**: Stochastic Momentum Index for precise overbought/oversold cycles.
-
-### 2. **[M] Momentum**
-*   **Trend Strength**: ADX-based filtering (>25 strong, <20 avoid chop).
-*   **Relative Strength (RS)**: Continuous benchmarking against the specific Sector ETF.
-*   **Weekly VWAP**: Real-time tracking of institutional price support.
-
-### 3. **[S] Smart Money**
-*   **Institutional Flow**: Tracks net accumulation vs. retail selling.
-*   **Insider Clusters**: Scans Form 4 filings for multiple open-market executive buys.
-*   **Short Interest**: Monitors "Days to Cover" for short-squeeze setups (>5.0 ratio).
-*   **Put/Call Ratio**: Contrarian sentiment analysis (Extreme Fear = Buy Opportunity).
-
-### 4. **[Q] Quality**
-*   **Growth/Valuation**: Real-time PEG Ratio filtering (<1.0 undervalued).
-*   **FCF Yield**: Prioritizes companies with high cash-flow-to-price ratios (>5%).
-*   **Earnings Consistency**: Tracks 4-quarter "Beat Rate" and EPS revisions.
-*   **Altman Z-Score**: Automated bankruptcy risk guard (Hard cap if < 1.8).
-
-### 5. **[E] Edge (Alternative Data)**
-*   **Sector Rotation**: Relative Rotation Graph phase detection (Leading/Improving).
-*   **News Velocity**: Alerts for 3-sigma news volume spikes (Sell the news signals).
-*   **Market VIX Guard**: Protective cap on all scores when VIX > 30 (Panic mode).
+![Next.js](https://img.shields.io/badge/Next.js-14-black) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688) ![Finviz](https://img.shields.io/badge/Data-Finviz-blue) ![OpenAI](https://img.shields.io/badge/AI-OpenRouter-orange)
 
 ---
 
-## 🛠️ Key Features
+## 🚀 The Decision Matrix: "The Beast Score"
 
-*   **The Beast Score Matrix**: Instant 0-100 verdict with color-coded "Firing Engines" (T, M, S, Q, E).
-*   **AI Council Strategy**: A debate-style verdict from "Bull", "Bear", and "Retail" AI agents, synthesized by a "Chief Strategist" into a bulleted Action Plan.
-*   **Interactive Charts**: Lightweight Charts (TradingView style) with VWAP, Bollinger Clouds, and Volatility Squeeze markers.
-*   **S&P 500 Scanner**: Full index screening by Market Cap Rank, RSI, Relative Volume, and "Strong Buy" conviction.
-*   **Market Discovery**: AI-powered clustering of global news into tradeable "Buzzing Themes".
-*   **Peer Benchmarking**: Live fundamental comparison of peers with aggregate group stats (Avg P/E, PEG).
+The terminal calculates a **0-100 Confidence Score** by aggregating five specialized engines. Each engine provides a specific "firing" signal represented by **[T, M, S, Q, E]** badges.
+
+### 1. **[T] Technicals (20%)**
+*   **RSI Regimes**: Focus on 40 (Bull Support) and 60 (Bear Resistance) pivots.
+*   **MACD Divergence**: Detects momentum exhaustion before price reversals.
+*   **Trend Support**: Automated scoring based on Price vs. SMA 50/200.
+
+### 2. **[M] Momentum (10%)**
+*   **ADX Filtering**: Measure trend strength (>25 strong, <20 avoid chop).
+*   **Relative Strength**: Continuous benchmarking against Sector ETFs.
+*   **Volatility Squeeze**: Detection of Bollinger/Keltner compression for explosive moves.
+
+### 3. **[S] Smart Money (20%)**
+*   **Institutional Accumulation**: Tracks net institutional ownership vs. volume ratio.
+*   **Insider Clusters**: Real-time detection of multiple open-market executive buys.
+*   **Short Interest**: Monitoring "Days to Cover" for short-squeeze setups (>5.0).
+
+### 4. **[Q] Quality (20%)**
+*   **Growth Valuation**: Real-time PEG Ratio filtering (<1.0 undervalued).
+*   **FCF Yield**: Prioritizes stocks with high cash-flow-to-price ratios (>5%).
+*   **Bankruptcy Guard**: Automated **Altman Z-Score** monitoring (Hard cap if < 1.8).
+
+### 5. **[E] Edge (20%)**
+*   **Alpha Hunter**: Cross-asset correlation matrix tracking DXY, 10Y Yield, and BTC.
+*   **Sector Rotation**: Detects if the stock's industry is Leading or Improving.
+*   **Market VIX Guard**: Protective score cap during high market panic (VIX > 30).
+
+---
+
+## 🛠️ Key Professional Features
+
+### 📈 Instant Strategy Backtester
+Next to every Beast Score is a **12-Month Performance Validation**. The system automatically simulates a strategy: *Buy at Score > 60, Sell at Score < 40*. It compares the **Beast Return** vs. **Buy & Hold**, providing instant proof of "Strategy Edge" and Win Rate.
+
+### 🔍 Pro-Grade S&P 500 Scanner
+A high-performance screener that fetches the entire index in a single logic flow.
+*   **Golden Setups**: Instantly filter for stocks meeting the "Golden" criteria: *Strong Buy + Upside > 15% + High Rel Vol + Safe RSI*.
+*   **Persistent Filters**: All search, sort, and filter states are preserved as you navigate the app.
+*   **Market Cap Ranking**: Permanent indexing by S&P 500 weight.
+
+### 🧠 AI Council Strategy
+A debate-style verdict from "Bull", "Bear", and "Retail" AI agents, synthesized into a bulleted **Strategic Action Plan** with specific entry and exit logic.
 
 ---
 
 ## 💻 Tech Stack
 
-*   **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Radix UI, Lucide Icons.
-*   **Backend**: FastAPI (Python), yfinance, Pandas, TA-Lib (ta), DuckDuckGo Search.
+*   **Frontend**: Next.js 14 (Client Components), TypeScript, Tailwind CSS, Radix UI.
+*   **Backend**: FastAPI, `finvizfinance`, `yfinance` (History only), Pandas, TA-Lib.
 *   **AI**: OpenRouter (LLM Council Implementation).
-*   **Visuals**: Lightweight-Charts, Recharts.
+*   **Visuals**: Lightweight-Charts (TradingView), Recharts.
 
 ---
 
@@ -66,23 +69,22 @@ At the heart of the terminal is **The Beast Score (0-100)**, a decision matrix t
 ### Prerequisites
 *   Python 3.9+
 *   Node.js 18+
-*   OpenRouter API Key
+*   OpenRouter API Key (configured in `backend/.env`)
 
-### Backend Setup
-1.  Navigate to `/backend`
-2.  Install dependencies: `pip install -r requirements.txt`
-3.  Create `.env`:
-    ```env
-    OPENROUTER_API_KEY=your_key_here
-    OPENROUTER_MODEL=xiaomi/mimo-v2-flash:free
+### Installation
+1.  **Clone & Install Backend**:
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn app.main:app --reload
     ```
-4.  Run: `uvicorn app.main:app --reload`
-
-### Frontend Setup
-1.  Navigate to `/frontend`
-2.  Install dependencies: `npm install`
-3.  Run: `npm run dev`
+2.  **Install Frontend**:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
 ---
 
-**Disclaimer:** *This tool is for informational purposes only. It is not financial advice. Always do your own due diligence before trading.*
+**Disclaimer:** *This terminal is for informational and educational purposes only. It is not financial advice. Always perform your own due diligence.*

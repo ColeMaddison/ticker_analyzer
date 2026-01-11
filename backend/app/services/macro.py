@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from app.services.data_fetcher import fetch_ticker_data
 
 MACRO_ASSETS = {

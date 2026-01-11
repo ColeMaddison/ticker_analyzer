@@ -194,10 +194,14 @@ async def discovery_feed():
 @app.get("/api/scanner")
 async def scanner_feed(filter_strong_buy: bool = False):
     tickers = await asyncio.to_thread(get_sp500_tickers)
-    # Perform scan on subset for initial API response if needed, 
-    # but here we use the cached function.
     df = await asyncio.to_thread(scan_market, tickers)
     
+    if filter_strong_buy:
+        # Finviz 'Strong Buy' might be different, but we check our Recommendation column
+        df = df[df['Recommendation'] == 'Strong Buy']
+    
+    return convert_numpy(df.to_dict(orient="records"))
+
 @app.get("/api/backtest/{ticker}")
 async def get_backtest(ticker: str):
     ticker = ticker.upper().strip()

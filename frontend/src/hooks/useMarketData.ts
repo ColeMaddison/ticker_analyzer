@@ -6,8 +6,16 @@ export function useMarketData() {
   const [scannerData, setScannerData] = useState<ScannerResult[] | null>(null);
   const [scanning, setScanning] = useState(false);
 
-  const fetchDiscovery = async () => {
-    if (discoveryData) return;
+  // Scanner States for persistence
+  const [scannerSearch, setScannerSearch] = useState("");
+  const [scannerMaxRsi, setScannerMaxRsi] = useState<number>(100);
+  const [scannerMinRelVol, setScannerMinRelVol] = useState<number>(0);
+  const [scannerOnlyStrongBuy, setScannerOnlyStrongBuy] = useState(false);
+  const [scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup] = useState(false);
+  const [scannerSortConfig, setScannerSortConfig] = useState<{ key: keyof ScannerResult; direction: 'asc' | 'desc' }>({ key: 'Upside %', direction: 'desc' });
+
+  const fetchDiscovery = async (force = false) => {
+    if (discoveryData && !force) return;
     setScanning(true);
     try {
       const res = await fetch("http://127.0.0.1:8000/api/discovery");
@@ -17,8 +25,8 @@ export function useMarketData() {
     setScanning(false);
   };
 
-  const fetchScanner = async () => {
-    if (scannerData) return;
+  const fetchScanner = async (force = false) => {
+    if (scannerData && !force) return;
     setScanning(true);
     try {
       const res = await fetch("http://127.0.0.1:8000/api/scanner");
@@ -28,5 +36,17 @@ export function useMarketData() {
     setScanning(false);
   };
 
-  return { discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner };
+  return { 
+    discoveryData, 
+    scannerData, 
+    scanning, 
+    fetchDiscovery, 
+    fetchScanner,
+    scannerSearch, setScannerSearch,
+    scannerMaxRsi, setScannerMaxRsi,
+    scannerMinRelVol, setScannerMinRelVol,
+    scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
+    scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
+    scannerSortConfig, setScannerSortConfig
+  };
 }

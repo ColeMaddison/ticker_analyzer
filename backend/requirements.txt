@@ -10,3 +10,4 @@ python-dotenv
 duckduckgo-search>=6.0.0
 numpy
 curl_cffi
+finvizfinance
