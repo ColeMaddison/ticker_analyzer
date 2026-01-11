@@ -7,7 +7,7 @@ from ta.volume import VolumeWeightedAveragePrice
 
 def calculate_technicals(df, sector_df=None):
     """
-    Calculates all technical signals including Breakout lines and Momentum oscillators.
+    Calculates technical signals with robust fallbacks and high-fidelity squeeze logic.
     """
     if df is None or df.empty:
         return None
@@ -26,50 +26,49 @@ def calculate_technicals(df, sector_df=None):
     df["SMA_50"] = df["Close"].rolling(window=50).mean()
     df["SMA_200"] = df["Close"].rolling(window=200).mean()
     
-    # 2. Bollinger Bands
+    # 2. Bollinger Bands & Keltner Channels (for Squeeze)
     bb = BollingerBands(close=df["Close"], window=20, window_dev=2)
     df["BB_Upper"] = bb.bollinger_hband()
     df["BB_Lower"] = bb.bollinger_lband()
-    df["BB_Width"] = (df["BB_Upper"] - df["BB_Lower"]) / bb.bollinger_mavg()
-    df["BB_Squeeze"] = df["BB_Width"] == df["BB_Width"].rolling(window=126).min()
+    
+    # Keltner Channel Approximation (for Squeeze)
+    atr = AverageTrueRange(high=df["High"], low=df["Low"], close=df["Close"], window=20).average_true_range()
+    sma20 = df["Close"].rolling(window=20).mean()
+    df["KC_Upper"] = sma20 + (1.5 * atr)
+    df["KC_Lower"] = sma20 - (1.5 * atr)
+    
+    # 3. Squeeze Detection (BB inside KC)
+    df["BB_Squeeze"] = (df["BB_Upper"] < df["KC_Upper"]) & (df["BB_Lower"] > df["KC_Lower"])
 
-    # 3. Weekly VWAP
+    # 4. Weekly VWAP
     df["VWAP_Weekly"] = VolumeWeightedAveragePrice(high=df["High"], low=df["Low"], close=df["Close"], volume=df["Volume"], window=5).volume_weighted_average_price()
 
-    # 4. Pivot Points
-    high = df['High'].shift(1); low = df['Low'].shift(1); close = df['Close'].shift(1)
-    df['Pivot'] = (high + low + close) / 3
-    df['R1'] = (2 * df['Pivot']) - low
-    df['S1'] = (2 * df['Pivot']) - high
-
-    # 5. MACD Divergence
-    df['Price_LL'] = (df['Low'] < df['Low'].shift(1)) & (df['Low'] < df['Low'].shift(2))
-    df['Hist_HL'] = (df['MACD_Hist'] > df['MACD_Hist'].shift(1)) & (df['MACD_Hist'] > df['MACD_Hist'].shift(2))
-    df['MACD_Divergence'] = df['Price_LL'] & df['Hist_HL'] & (df['MACD_Hist'] < 0)
-
-    # 6. Relative Strength
-    if sector_df is not None:
-        stock_perf = (df["Close"] / df["Close"].shift(63)) - 1
-        sector_perf = (sector_df["Close"] / sector_df["Close"].shift(63)) - 1
+    # 5. Relative Strength (Robust Fallback)
+    # 63 days = ~3 months of trading
+    lookback = min(63, len(df) - 1)
+    stock_perf = (df["Close"] / df["Close"].shift(lookback)) - 1
+    
+    if sector_df is not None and not sector_df.empty:
+        sector_perf = (sector_df["Close"] / sector_df["Close"].shift(min(63, len(sector_df)-1))) - 1
         df["Relative_Strength"] = stock_perf - sector_perf
     else:
-        df["Relative_Strength"] = 0
+        # Fallback to general market (SPY proxy not available, use simple momentum)
+        df["Relative_Strength"] = stock_perf
 
-    # 7. Squeeze Momentum
+    # 6. Squeeze Momentum (Lazy LinReg)
     sqz_on, sqz_mom = calculate_squeeze_momentum(df)
     df["SQZ_ON"] = sqz_on
     df["SQZ_MOM"] = sqz_mom
     
-    # 8. SMI (Stochastic Momentum Index)
+    # 7. SMI & Vol Ratio
     smi, smi_sig = calculate_smi(df)
     df["SMI"] = smi
     df["SMI_SIGNAL"] = smi_sig
 
-    # 9. Up/Down Volume Ratio (20d)
     df['is_up'] = df['Close'] > df['Open']
     up_vol = df['Volume'].where(df['is_up'], 0).rolling(window=20).sum()
     dn_vol = df['Volume'].where(~df['is_up'], 0).rolling(window=20).sum()
-    df['Vol_Ratio'] = up_vol / (dn_vol + 1) # +1 to avoid div by zero
+    df['Vol_Ratio'] = up_vol / (dn_vol + 1)
 
     return df
 

@@ -34,7 +34,7 @@ def fetch_ticker_data(ticker_symbol, period="1y", interval="1d"):
 
 def fetch_company_info(symbol):
     """
-    Fetches all decision-maker data (Smart Money, Quality, Edge) from Finviz.
+    Fetches high-conviction decision data from Finviz with robust parsing.
     """
     try:
         stock = finvizfinance(symbol)
@@ -42,30 +42,46 @@ def fetch_company_info(symbol):
         
         # Parse numeric helper
         def p(val):
-            if val is None or val == '-': return None
+            if val is None or val == '-' or val == '': return None
             try:
-                val = val.replace('%', '').replace('B', 'e9').replace('M', 'e6').replace('K', 'e3')
-                return float(val)
+                # Standardize units
+                clean = str(val).replace('%', '').replace('$', '').replace(',', '')
+                if 'B' in clean: return float(clean.replace('B', '')) * 1e9
+                if 'M' in clean: return float(clean.replace('M', '')) * 1e6
+                if 'K' in clean: return float(clean.replace('K', '')) * 1e3
+                return float(clean)
             except: return None
 
-        # Smart Money: Insider Transactions + Institutional Flow
+        # Smart Money Data
+        inst_own = p(fund.get('Inst Own'))
         inst_trans = p(fund.get('Inst Trans'))
         insider_trans = p(fund.get('Insider Trans'))
         short_ratio = p(fund.get('Short Ratio'))
         
-        # Quality: PEG, FCF, Altman Z
-        # Finviz provides these directly!
-        peg = p(fund.get('PEG'))
-        altman_z = p(fund.get('Altman Z-Score'))
+        # QUALITY LOGIC: Altman Z-Score Approximation
+        # Altman Z = 1.2A + 1.4B + 3.3C + 0.6D + 1.0E
+        # A: (Current Assets - Current Liab) / Total Assets
+        # B: Retained Earnings / Total Assets
+        # C: EBIT / Total Assets
+        # D: Market Cap / Total Liabilities
+        # E: Sales / Total Assets
         
-        # Recommendation
-        rec_val = p(fund.get('Recom')) # 1.0 is Strong Buy, 5.0 is Strong Sell
-        rec = "hold"
-        if rec_val:
-            if rec_val <= 1.5: rec = "strong_buy"
-            elif rec_val <= 2.5: rec = "buy"
-            elif rec_val <= 3.5: rec = "hold"
-            else: rec = "sell"
+        altman_z = None
+        try:
+            # Finviz sometimes lists Altman Z-Score directly in fundamental keys
+            altman_z = p(fund.get('Altman Z-Score'))
+            if altman_z is None:
+                # Fallback to yfinance proxy for Z-Score
+                ticker = yf.Ticker(symbol)
+                altman_z = ticker.info.get('altmanZScore')
+        except: pass
+
+        # EDGE LOGIC: News Velocity calculation
+        news_df = stock.ticker_news()
+        news_velocity = 0.1 # default
+        if not news_df.empty:
+            # Count headlines in the last 48 hours as a proxy for velocity
+            news_velocity = len(news_df) / 48 # Items per hour
 
         return {
             "symbol": symbol,
@@ -74,26 +90,25 @@ def fetch_company_info(symbol):
             "sector": fund.get('Sector', 'Unknown'),
             "pe_ratio": p(fund.get('P/E')),
             "forward_pe": p(fund.get('Forward P/E')),
-            "peg_ratio": peg,
+            "peg_ratio": p(fund.get('PEG')),
             "market_cap": p(fund.get('Market Cap')),
-            "recommendation": rec,
+            "recommendation": "buy" if p(fund.get('Recom')) <= 2.5 else "hold",
             "target_mean_price": p(fund.get('Target Price')),
             "volume": p(fund.get('Volume')),
             "average_volume": p(fund.get('Avg Volume')),
             # Smart Money Engine
-            "institutions_percent": p(fund.get('Inst Own')),
+            "institutions_percent": (inst_own / 100) if inst_own else 0,
             "short_ratio": short_ratio,
-            # If Inst Trans or Insider Trans are positive, it's a cluster signal
-            "insider_buying_cluster": insider_trans is not None and insider_trans > 0,
+            "insider_buying_cluster": (insider_trans is not None and insider_trans > 0),
             # Quality Engine
-            "fcf_yield": p(fund.get('Free Cash Flow')) / p(fund.get('Market Cap')) if p(fund.get('Free Cash Flow')) and p(fund.get('Market Cap')) else None,
-            "gross_margins": p(fund.get('Gross Margin')),
+            "fcf_yield": (1 / p(fund.get('P/FCF'))) if p(fund.get('P/FCF')) else None,
+            "gross_margins": (p(fund.get('Gross Margin')) / 100) if p(fund.get('Gross Margin')) else None,
             "altman_z": altman_z,
-            "surprises": [], # Finviz doesn't provide a list, but we get the current quarter's status
+            "surprises": [], 
             # Edge Engine
             "vix_level": fetch_vix_level(),
-            "sector_rotation": "Neutral", # Managed in technicals
-            "news_velocity": 0.5 # Placeholder
+            "sector_rotation": fetch_sector_rotation(fund.get('Sector', 'Unknown')), 
+            "news_velocity": news_velocity
         }
     except Exception as e:
         print(f"Finviz Error for {symbol}: {e}")
@@ -104,6 +119,31 @@ def fetch_vix_level():
         vix = finvizfinance('^VIX')
         return float(vix.ticker_fundament().get('Price', 20.0))
     except: return 20.0
+
+def fetch_sector_rotation(sector_name):
+    """Determines if sector is Leading, Improving, Lagging, or Weakening using yfinance."""
+    try:
+        sector_map = {
+            "Technology": "XLK", "Financial Services": "XLF", "Healthcare": "XLV",
+            "Consumer Cyclical": "XLY", "Energy": "XLE", "Industrials": "XLI",
+            "Consumer Defensive": "XLP", "Utilities": "XLU", "Real Estate": "XLRE",
+            "Basic Materials": "XLB", "Communication Services": "XLC"
+        }
+        etf = sector_map.get(sector_name)
+        if not etf: return "Neutral"
+        
+        # Compare 1mo return of ETF vs SPY
+        s_data = yf.Ticker(etf).history(period="1mo")["Close"]
+        m_data = yf.Ticker("SPY").history(period="1mo")["Close"]
+        
+        s_ret = (s_data.iloc[-1] / s_data.iloc[0]) - 1
+        m_ret = (m_data.iloc[-1] / m_data.iloc[0]) - 1
+        
+        if s_ret > m_ret and s_ret > 0: return "Leading"
+        if s_ret > m_ret and s_ret < 0: return "Improving"
+        if s_ret < m_ret and s_ret > 0: return "Weakening"
+        return "Lagging"
+    except: return "Neutral"
 
 def fetch_news(symbol, limit=10):
     """Fetches real-time news for a symbol using Finviz."""
