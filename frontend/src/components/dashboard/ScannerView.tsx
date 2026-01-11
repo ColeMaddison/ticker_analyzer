@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "../ui";
 import { ScannerResult } from "../../types";
-import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star } from "lucide-react";
+import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star, Zap } from "lucide-react";
 
 export const ScannerView = ({ 
   data, scanning, onScan, onAnalyze,
@@ -10,18 +10,20 @@ export const ScannerView = ({
   minRelVol, setMinRelVol,
   onlyStrongBuy, setOnlyStrongBuy,
   onlyGoldenSetup, setOnlyGoldenSetup,
-  sortConfig, setSortConfig
+  sortConfig, setSortConfig,
+  currentSignal
 }: { 
   data: ScannerResult[] | null, 
   scanning: boolean, 
-  onScan: () => void, 
+  onScan: (force: boolean, signal?: string | null) => void, 
   onAnalyze: (t: string) => void,
   search: string, setSearch: (v: string) => void,
   maxRsi: number, setMaxRsi: (v: number) => void,
   minRelVol: number, setMinRelVol: (v: number) => void,
   onlyStrongBuy: boolean, setOnlyStrongBuy: (v: boolean) => void,
   onlyGoldenSetup: boolean, setOnlyGoldenSetup: (v: boolean) => void,
-  sortConfig: { key: keyof ScannerResult; direction: 'asc' | 'desc' }, setSortConfig: (v: any) => void
+  sortConfig: { key: keyof ScannerResult; direction: 'asc' | 'desc' }, setSortConfig: (v: any) => void,
+  currentSignal: string | null
 }) => {
 
   const isGoldenSetup = (r: ScannerResult) => {
@@ -32,11 +34,23 @@ export const ScannerView = ({
     if (!data) return [];
     let sorted = [...data];
     
-    // Sort
+    // Improved Robust Sort
     sorted.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
+      let valA: any = a[sortConfig.key];
+      let valB: any = b[sortConfig.key];
+      
+      // Handle numeric strings or potential nulls
+      if (valA === valB) return 0;
+      if (valA == null || valA === "") return 1;
+      if (valB == null || valB === "") return -1;
+      
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? valA.localeCompare(valB) 
+          : valB.localeCompare(valA);
+      }
+
+      return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
     });
 
     return sorted.filter(r => 
@@ -118,9 +132,17 @@ export const ScannerView = ({
                 {onlyGoldenSetup ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                 GOLDEN
             </button>
+
+            <button 
+                onClick={() => onScan(true, currentSignal === 'Vol. Squeeze' ? null : 'Vol. Squeeze')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${currentSignal === 'Vol. Squeeze' ? 'bg-orange-500/20 border-orange-500 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-zinc-900/50 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+            >
+                <Zap className={`w-3 h-3 ${currentSignal === 'Vol. Squeeze' ? 'fill-current' : ''}`} />
+                SQUEEZE
+            </button>
          </div>
 
-         <button onClick={onScan} className="w-full md:w-auto flex items-center gap-2 text-xs font-bold bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+         <button onClick={() => onScan(true, currentSignal)} className="w-full md:w-auto flex items-center gap-2 text-xs font-bold bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
            {scanning ? <span className="animate-spin">⏳</span> : <Play className="w-3 h-3 fill-current" />}
            {scanning ? "SCANNING..." : "RUN SCANNER"}
          </button>
@@ -161,6 +183,9 @@ export const ScannerView = ({
                                     <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 animate-pulse" />
                                     <span className="text-[7px] bg-yellow-500/10 text-yellow-500 px-1 rounded border border-yellow-500/20 font-black tracking-tighter">GOLDEN</span>
                                 </div>
+                            )}
+                            {currentSignal === 'Vol. Squeeze' && (
+                                <Zap className="w-2.5 h-2.5 text-orange-500 fill-current" />
                             )}
                         </td>
                         <td className="p-3 text-right font-mono font-medium text-zinc-400">${r.Price.toFixed(2)}</td>

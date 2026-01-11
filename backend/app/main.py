@@ -192,12 +192,11 @@ async def discovery_feed():
     return analysis
 
 @app.get("/api/scanner")
-async def scanner_feed(filter_strong_buy: bool = False):
-    tickers = await asyncio.to_thread(get_sp500_tickers)
-    df = await asyncio.to_thread(scan_market, tickers)
+async def scanner_feed(filter_strong_buy: bool = False, signal: Optional[str] = None):
+    # tickers param is no longer needed since scan_market handles the S&P 500 internally now
+    df = await asyncio.to_thread(scan_market, signal=signal)
     
     if filter_strong_buy:
-        # Finviz 'Strong Buy' might be different, but we check our Recommendation column
         df = df[df['Recommendation'] == 'Strong Buy']
     
     return convert_numpy(df.to_dict(orient="records"))

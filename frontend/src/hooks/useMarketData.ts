@@ -14,6 +14,8 @@ export function useMarketData() {
   const [scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup] = useState(false);
   const [scannerSortConfig, setScannerSortConfig] = useState<{ key: keyof ScannerResult; direction: 'asc' | 'desc' }>({ key: 'Upside %', direction: 'desc' });
 
+  const [scannerSignal, setScannerSignal] = useState<string | null>(null);
+
   const fetchDiscovery = async (force = false) => {
     if (discoveryData && !force) return;
     setScanning(true);
@@ -25,11 +27,15 @@ export function useMarketData() {
     setScanning(false);
   };
 
-  const fetchScanner = async (force = false) => {
-    if (scannerData && !force) return;
+  const fetchScanner = async (force = false, signal: string | null = null) => {
+    if (scannerData && !force && scannerSignal === signal) return;
     setScanning(true);
+    setScannerSignal(signal);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/scanner");
+      const url = new URL("http://127.0.0.1:8000/api/scanner");
+      if (signal) url.searchParams.append("signal", signal);
+      
+      const res = await fetch(url.toString());
       const json = await res.json();
       setScannerData(json);
     } catch (e) { console.error(e); }
@@ -47,6 +53,7 @@ export function useMarketData() {
     scannerMinRelVol, setScannerMinRelVol,
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
-    scannerSortConfig, setScannerSortConfig
+    scannerSortConfig, setScannerSortConfig,
+    scannerSignal
   };
 }

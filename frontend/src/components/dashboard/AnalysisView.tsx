@@ -217,37 +217,37 @@ export const AnalysisView = ({ data, onTickerSelect, backtestResult, isBacktesti
                 </CardContent>
             </Card>
 
-            {/* Quality Engine */}
-            <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
-                <CardHeader className="py-2.5 border-b border-zinc-800/50 flex flex-row items-center gap-2"><HelpCircle className="w-3 h-3 text-zinc-500"/><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Quality Engine</CardTitle></CardHeader>
-                <CardContent className="space-y-2.5 pt-3">
-                    <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50 space-y-1.5">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[9px] uppercase font-bold text-zinc-500">PEG Ratio</span>
-                            <span className={`text-[10px] font-black ${data.info.peg_ratio === null ? 'text-zinc-600' : data.info.peg_ratio < 1 ? 'text-green-400' : data.info.peg_ratio > 2 ? 'text-red-400' : 'text-zinc-400'}`}>
-                                {data.info.peg_ratio !== null ? data.info.peg_ratio.toFixed(2) : "N/A"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-[9px] uppercase font-bold text-zinc-500">FCF Yield</span>
-                            <span className={`text-[10px] font-black ${data.info.fcf_yield === null ? 'text-zinc-600' : data.info.fcf_yield > 0.05 ? 'text-green-400' : 'text-zinc-400'}`}>
-                                {data.info.fcf_yield !== null ? (data.info.fcf_yield * 100).toFixed(1) + "%" : "N/A"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-[9px] uppercase font-bold text-zinc-500">Altman Z</span>
-                            <span className={`text-[10px] font-black ${data.info.altman_z === null ? 'text-zinc-600' : data.info.altman_z < 1.8 ? 'text-red-500' : 'text-green-500'}`}>
-                                {data.info.altman_z !== null ? data.info.altman_z.toFixed(2) : "N/A"}
-                            </span>
-                        </div>
-                    </div>
-                    {data.info.altman_z !== null && data.info.altman_z < 1.8 && (
-                        <div className="text-[7px] bg-red-500/10 text-red-400 p-1 rounded border border-red-500/20 font-black uppercase text-center animate-pulse tracking-tighter">
-                            ⚠️ INSOLVENCY RISK
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+        {/* Quality Engine */}
+        <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
+          <CardHeader className="py-3 border-b border-zinc-800/50"><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><HelpCircle className="w-3 h-3"/> Quality Engine</CardTitle></CardHeader>
+          <CardContent className="space-y-3 pt-4">
+            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[9px] uppercase font-bold text-zinc-500">PEG Ratio</span>
+                <span className={`text-[10px] font-black ${data.info.peg_ratio == null ? 'text-zinc-600' : data.info.peg_ratio < 1 ? 'text-green-400' : data.info.peg_ratio > 2 ? 'text-red-400' : 'text-zinc-400'}`}>
+                    {data.info.peg_ratio != null ? Number(data.info.peg_ratio).toFixed(2) : "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[9px] uppercase font-bold text-zinc-500">FCF Yield</span>
+                <span className={`text-[10px] font-black ${data.info.fcf_yield == null ? 'text-zinc-600' : data.info.fcf_yield > 0.05 ? 'text-green-400' : 'text-zinc-400'}`}>
+                    {data.info.fcf_yield != null ? (Number(data.info.fcf_yield) * 100).toFixed(1) + "%" : "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] uppercase font-bold text-zinc-500">Altman Z</span>
+                <span className={`text-[10px] font-black ${data.info.altman_z == null ? 'text-zinc-600' : data.info.altman_z < 1.8 ? 'text-red-500' : 'text-green-500'}`}>
+                    {data.info.altman_z != null ? Number(data.info.altman_z).toFixed(2) : "N/A"}
+                </span>
+              </div>
+            </div>
+            {data.info.altman_z != null && data.info.altman_z < 1.8 && (
+                <div className="text-[7px] bg-red-500/10 text-red-400 p-1 rounded border border-red-500/20 font-black uppercase text-center animate-pulse tracking-tighter">
+                    ⚠️ INSOLVENCY RISK
+                </div>
+            )}
+          </CardContent>
+        </Card>
 
             {/* Edge Engine */}
             <Card className="bg-[#0A0A0A] border-zinc-800 h-full">

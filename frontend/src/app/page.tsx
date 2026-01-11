@@ -20,12 +20,9 @@ export default function Dashboard() {
     scannerMinRelVol, setScannerMinRelVol,
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
-    scannerSortConfig, setScannerSortConfig
+    scannerSortConfig, setScannerSortConfig,
+    scannerSignal
   } = useMarketData();
-
-  // useEffect(() => {
-  //   analyzeTicker("AAPL");
-  // }, []);
 
   const handleAnalyze = (t: string) => {
     setInputTicker(t);
@@ -97,7 +94,7 @@ export default function Dashboard() {
             <ScannerView 
               data={scannerData} 
               scanning={scanning} 
-              onScan={() => fetchScanner(true)} 
+              onScan={(force, signal) => fetchScanner(force, signal)} 
               onAnalyze={handleAnalyze}
               search={scannerSearch} setSearch={setScannerSearch}
               maxRsi={scannerMaxRsi} setMaxRsi={setScannerMaxRsi}
@@ -105,6 +102,7 @@ export default function Dashboard() {
               onlyStrongBuy={scannerOnlyStrongBuy} setOnlyStrongBuy={setScannerOnlyStrongBuy}
               onlyGoldenSetup={scannerOnlyGoldenSetup} setOnlyGoldenSetup={setScannerOnlyGoldenSetup}
               sortConfig={scannerSortConfig} setSortConfig={setScannerSortConfig}
+              currentSignal={scannerSignal}
             />
           </TabsContent>
 
