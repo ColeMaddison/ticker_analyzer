@@ -1,16 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui";
 import { DiscoveryTheme } from "../../types";
 
-export const DiscoveryView = ({ data, scanning, onScan, onAnalyze }: { data: DiscoveryTheme[] | null, scanning: boolean, onScan: () => void, onAnalyze: (t: string) => void }) => {
+export const DiscoveryView = ({ 
+  data, scanning, onScan, onAnalyze, currentSector 
+}: { 
+  data: DiscoveryTheme[] | null, 
+  scanning: boolean, 
+  onScan: (force: boolean, sector: string) => void, 
+  onAnalyze: (t: string) => void,
+  currentSector: string
+}) => {
+  const sectors = [
+    "All", "Technology", "Financial Services", "Healthcare", "Consumer Cyclical", 
+    "Energy", "Industrials", "Consumer Defensive", "Utilities", "Real Estate", 
+    "Basic Materials", "Communication Services"
+  ];
+
   return (
-    <div>
-      <div className="flex justify-end mb-6">
-         <button onClick={onScan} className="text-xs font-bold bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-6 py-3 rounded-lg transition-all active:scale-95">
-           {scanning ? "SCANNING..." : "SCAN MARKET BUZZ"}
-         </button>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#0A0A0A] p-4 rounded-xl border border-zinc-800">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
+          {sectors.map(s => (
+            <button
+              key={s}
+              onClick={() => onScan(true, s)}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border ${
+                currentSector === s 
+                ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]" 
+                : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <button 
+          onClick={() => onScan(true, currentSector)} 
+          disabled={scanning}
+          className="w-full md:w-auto text-xs font-bold bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-6 py-3 rounded-lg transition-all active:scale-95 disabled:opacity-50"
+        >
+           {scanning ? "CRUNCHING FEEDS..." : "REFRESH BUZZ"}
+        </button>
       </div>
       
-      {!data && scanning && <div className="text-center text-zinc-500 py-20 animate-pulse">Scanning Global Feeds...</div>}
+      {!data && scanning && (
+        <div className="flex flex-col items-center justify-center py-24 gap-4 opacity-50">
+            <div className="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin"></div>
+            <p className="text-sm font-black uppercase tracking-widest text-zinc-500">Discovering {currentSector} Themes...</p>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {data?.map((t, i)=>(

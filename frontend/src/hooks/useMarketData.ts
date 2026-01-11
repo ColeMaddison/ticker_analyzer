@@ -16,11 +16,17 @@ export function useMarketData() {
 
   const [scannerSignal, setScannerSignal] = useState<string | null>(null);
 
-  const fetchDiscovery = async (force = false) => {
-    if (discoveryData && !force) return;
+  const [discoverySector, setDiscoverySector] = useState<string>("All");
+
+  const fetchDiscovery = async (force = false, sector: string = "All") => {
+    if (discoveryData && !force && discoverySector === sector) return;
     setScanning(true);
+    setDiscoverySector(sector);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/discovery");
+      const url = new URL("http://127.0.0.1:8000/api/discovery");
+      if (sector && sector !== "All") url.searchParams.append("sector", sector);
+      
+      const res = await fetch(url.toString());
       const json = await res.json();
       setDiscoveryData(json.themes);
     } catch (e) { console.error(e); }
@@ -54,6 +60,7 @@ export function useMarketData() {
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
-    scannerSignal
+    scannerSignal,
+    discoverySector, setDiscoverySector
   };
 }

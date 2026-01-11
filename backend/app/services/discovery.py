@@ -2,7 +2,6 @@ import json
 import os
 from duckduckgo_search import DDGS
 from openai import OpenAI
-import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,50 +14,56 @@ client = OpenAI(
     api_key=API_KEY,
 )
 
-def fetch_market_buzz():
+def fetch_market_buzz(sector=None):
     """
-    Searches for market-moving news in specific 'Heavy Lifter' sectors.
+    Searches for market-moving news. If sector is provided, targets that specific industry.
     """
     ddgs = DDGS()
     
     # Targeted Sector Queries
-    sector_queries = [
-        "semiconductor industry trends stock market",
-        "enterprise software market news analysis",
-        "mining and metals stock sector news",
-        "financial sector major movers today",
-        "industrial machinery stocks outlook"
-    ]
+    if sector and sector != "All":
+        sector_queries = [
+            f"{sector} industry trends stock market analysis",
+            f"top moving stocks in {sector} sector today",
+            f"macro headwinds affecting {sector} companies",
+            f"institutional accumulation in {sector} stocks"
+        ]
+    else:
+        sector_queries = [
+            "semiconductor industry trends stock market",
+            "enterprise software market news analysis",
+            "mining and metals stock sector news",
+            "financial sector major movers today",
+            "industrial machinery stocks outlook"
+        ]
     
     # Social/Retail Sentiment (Strictly Financial)
     social_queries = [
-        "most discussed stocks wallstreetbets investing",
-        "fintwit trending tickers analysis"
+        f"most discussed {sector if sector and sector != 'All' else ''} stocks wallstreetbets investing",
+        f"fintwit trending {sector if sector and sector != 'All' else ''} tickers analysis"
     ]
     
     combined_results = []
     
     # Fetch Sector News (Mainstream)
     try:
-        # Rotate through 3 random sectors each time to keep it fresh but relevant, 
-        # or just grab top 3. Let's grab the first 3 for consistency.
-        for q in sector_queries[:3]: 
-            results = ddgs.news(keywords=q, max_results=4)
+        limit = 4 if sector and sector != "All" else 3
+        for q in sector_queries[:limit]: 
+            results = ddgs.news(keywords=q, max_results=5)
             if results:
                 for r in results:
-                    combined_results.append(f"[Sector News] {r.get('title')} ({r.get('source')})")
+                    combined_results.append(f"[{sector if sector and sector != 'All' else 'Market'} News] {r.get('title')} ({r.get('source')})")
     except Exception as e:
         print(f"Error fetching sector buzz: {e}")
 
     # Fetch Social Buzz
     try:
         for q in social_queries:
-            results = ddgs.text(keywords=q, max_results=4)
+            results = ddgs.text(keywords=q, max_results=5)
             if results:
                 for r in results:
                     title = r.get('title', '')
                     body = r.get('body', '')
-                    # Simple keyword filter to reduce noise before AI sees it
                     if any(x in (title + body).lower() for x in ['stock', 'market', 'trade', 'invest', 'price', 'nasdaq', 'nyse']):
                         combined_results.append(f"[Retail Sentiment] {title}: {body[:100]}...")
     except Exception as e:
@@ -120,7 +125,6 @@ def analyze_market_trends(news_list):
             response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content
-        # Ensure clean JSON
         if content.startswith("```json"):
             content = content[7:]
         if content.endswith("```"):
@@ -128,5 +132,5 @@ def analyze_market_trends(news_list):
             
         return json.loads(content)
     except Exception as e:
-        st.error(f"LLM Analysis Error: {e}")
+        print(f"LLM Analysis Error: {e}")
         return {"themes": []}

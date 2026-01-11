@@ -21,7 +21,8 @@ export default function Dashboard() {
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
-    scannerSignal
+    scannerSignal,
+    discoverySector, setDiscoverySector
   } = useMarketData();
 
   const handleAnalyze = (t: string) => {
@@ -64,7 +65,7 @@ export default function Dashboard() {
           <div className="flex justify-center">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/50 p-1.5 backdrop-blur-sm scale-110 origin-top">
               <TabsTrigger value="analysis" className="gap-2 font-bold text-xs uppercase px-4">📈 Analysis</TabsTrigger>
-              <TabsTrigger value="discovery" onClick={() => fetchDiscovery()} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
+              <TabsTrigger value="discovery" onClick={() => fetchDiscovery(false, discoverySector)} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
               <TabsTrigger value="scanner" onClick={() => fetchScanner()} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
               <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Strategy</TabsTrigger>
             </TabsList>
@@ -87,7 +88,7 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="discovery">
-            <DiscoveryView data={discoveryData} scanning={scanning} onScan={() => fetchDiscovery(true)} onAnalyze={handleAnalyze} />
+            <DiscoveryView data={discoveryData} scanning={scanning} onScan={(force, sector) => fetchDiscovery(force, sector)} onAnalyze={handleAnalyze} currentSector={discoverySector} />
           </TabsContent>
 
           <TabsContent value="scanner">

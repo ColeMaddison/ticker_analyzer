@@ -186,8 +186,8 @@ async def stream_analysis(ticker: str, request: Request):
     return EventSourceResponse(event_generator())
 
 @app.get("/api/discovery")
-async def discovery_feed():
-    raw_news = await asyncio.to_thread(fetch_market_buzz)
+async def discovery_feed(sector: Optional[str] = None):
+    raw_news = await asyncio.to_thread(fetch_market_buzz, sector=sector)
     analysis = await asyncio.to_thread(analyze_market_trends, raw_news)
     return analysis
 
