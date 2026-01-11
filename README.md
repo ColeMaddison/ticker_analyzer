@@ -2,108 +2,86 @@
 
 **Institutional-Grade Market Intelligence Terminal**
 
-A professional-grade dashboard that combines **Technical Analysis**, **Fundamental Data**, **Options Sentiment**, and **AI-Powered Reasoning** to deliver high-conviction trading signals. Designed to bridge the gap between retail timing and institutional value.
+A professional-grade dashboard that combines **Technical Analysis**, **Smart Money Flow**, **Fundamental Quality**, and **Alternative Data** to deliver high-conviction trading signals. Designed to bridge the gap between retail timing and institutional value.
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue) ![Streamlit](https://img.shields.io/badge/Streamlit-1.50%2B-red) ![OpenAI](https://img.shields.io/badge/AI-OpenRouter-orange)
-
-## 🚀 Key Features
-
-### 1. Multi-Factor Analysis Engine
-We don't just look at one signal. The **Scorer** engine aggregates 4 distinct dimensions into a single 0-100 Confidence Score:
-*   **Technicals (40%)**: RSI Regimes, MACD Divergence, Stochastic Momentum Index (SMI).
-*   **Momentum (25%)**: Relative Strength vs. Sector, ADX Trend Strength, Weekly VWAP, Volatility Squeeze.
-*   **Fundamentals (10%)**: Analyst Consensus, Revision Momentum, PEG Ratio.
-*   **AI Sentiment (25%)**: A "Council" of AI agents (Bull, Bear, Retail) debating the news.
-
-### 2. Institutional Metrics
-*   **Hedge Fund Score**: Specific 0-100 rating based on Smart Money flow.
-*   **Risk Profile**: Sharpe Ratio, Max Drawdown, and Volatility.
-*   **Options Sentiment**: Put/Call Ratio analysis to spot hedging vs. speculation.
-*   **Breakout Lines**: Auto-plotted Pivot Points (R1/S1) and Bollinger Clouds.
-
-### 3. The "AI Council"
-Instead of a generic summary, the AI simulates a debate:
-*   **🐂 The Bull**: Argues the upside case.
-*   **🐻 The Bear**: Identifies "kill-switch" risks.
-*   **📢 The Retail Trader**: Scans Reddit/X for FOMO or Fear.
-*   **🎯 The Arbiter**: Delivers a final **Actionable Verdict** with specific Entry/Exit levels.
-
-### 4. Market Scanner
-*   **S&P 500 Screener**: Instantly scan 500 stocks for "Strong Buy" ratings or Oversold (RSI < 30) conditions.
-*   **Discovery Engine**: Scans global news for "Buzzing Themes" (e.g., "AI Chip Shortage") and identifies affected tickers.
+![Next.js](https://img.shields.io/badge/Next.js-14-black) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688) ![Tailwind](https://img.shields.io/badge/Tailwind-3.3-38B2AC) ![OpenAI](https://img.shields.io/badge/AI-OpenRouter-orange)
 
 ---
 
-## 🛠️ Installation
+## 🚀 The Multi-Engine Analysis Hub
+
+At the heart of the terminal is **The Beast Score (0-100)**, a decision matrix that aggregates five specialized engines into a single actionable output.
+
+### 1. **[T] Technicals**
+*   **RSI Regimes**: Focus on 40 (Bull Support) and 60 (Bear Resistance) shift points.
+*   **MACD Divergence**: Automated detection of price vs. momentum exhaustion.
+*   **SMI**: Stochastic Momentum Index for precise overbought/oversold cycles.
+
+### 2. **[M] Momentum**
+*   **Trend Strength**: ADX-based filtering (>25 strong, <20 avoid chop).
+*   **Relative Strength (RS)**: Continuous benchmarking against the specific Sector ETF.
+*   **Weekly VWAP**: Real-time tracking of institutional price support.
+
+### 3. **[S] Smart Money**
+*   **Institutional Flow**: Tracks net accumulation vs. retail selling.
+*   **Insider Clusters**: Scans Form 4 filings for multiple open-market executive buys.
+*   **Short Interest**: Monitors "Days to Cover" for short-squeeze setups (>5.0 ratio).
+*   **Put/Call Ratio**: Contrarian sentiment analysis (Extreme Fear = Buy Opportunity).
+
+### 4. **[Q] Quality**
+*   **Growth/Valuation**: Real-time PEG Ratio filtering (<1.0 undervalued).
+*   **FCF Yield**: Prioritizes companies with high cash-flow-to-price ratios (>5%).
+*   **Earnings Consistency**: Tracks 4-quarter "Beat Rate" and EPS revisions.
+*   **Altman Z-Score**: Automated bankruptcy risk guard (Hard cap if < 1.8).
+
+### 5. **[E] Edge (Alternative Data)**
+*   **Sector Rotation**: Relative Rotation Graph phase detection (Leading/Improving).
+*   **News Velocity**: Alerts for 3-sigma news volume spikes (Sell the news signals).
+*   **Market VIX Guard**: Protective cap on all scores when VIX > 30 (Panic mode).
+
+---
+
+## 🛠️ Key Features
+
+*   **The Beast Score Matrix**: Instant 0-100 verdict with color-coded "Firing Engines" (T, M, S, Q, E).
+*   **AI Council Strategy**: A debate-style verdict from "Bull", "Bear", and "Retail" AI agents, synthesized by a "Chief Strategist" into a bulleted Action Plan.
+*   **Interactive Charts**: Lightweight Charts (TradingView style) with VWAP, Bollinger Clouds, and Volatility Squeeze markers.
+*   **S&P 500 Scanner**: Full index screening by Market Cap Rank, RSI, Relative Volume, and "Strong Buy" conviction.
+*   **Market Discovery**: AI-powered clustering of global news into tradeable "Buzzing Themes".
+*   **Peer Benchmarking**: Live fundamental comparison of peers with aggregate group stats (Avg P/E, PEG).
+
+---
+
+## 💻 Tech Stack
+
+*   **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Radix UI, Lucide Icons.
+*   **Backend**: FastAPI (Python), yfinance, Pandas, TA-Lib (ta), DuckDuckGo Search.
+*   **AI**: OpenRouter (LLM Council Implementation).
+*   **Visuals**: Lightweight-Charts, Recharts.
+
+---
+
+## 🏗️ Setup & Installation
 
 ### Prerequisites
-*   Python 3.9 or higher.
-*   An [OpenRouter API Key](https://openrouter.ai/) (for the AI analysis).
+*   Python 3.9+
+*   Node.js 18+
+*   OpenRouter API Key
 
-### Setup
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/yourusername/ticker-analyzer.git
-    cd ticker_analyzer
+### Backend Setup
+1.  Navigate to `/backend`
+2.  Install dependencies: `pip install -r requirements.txt`
+3.  Create `.env`:
+    ```env
+    OPENROUTER_API_KEY=your_key_here
+    OPENROUTER_MODEL=xiaomi/mimo-v2-flash:free
     ```
+4.  Run: `uvicorn app.main:app --reload`
 
-2.  **Create a Virtual Environment:**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure API Key:**
-    *   Create a `.env` file in the root directory.
-    *   Add your key:
-        ```env
-        OPENROUTER_API_KEY=sk-or-v1-your-key-here
-        OPENROUTER_MODEL=xiaomi/mimo-v2-flash:free  # or gpt-4o, etc.
-        ```
-
----
-
-## 🖥️ Usage
-
-Run the dashboard with Streamlit:
-
-```bash
-streamlit run main.py
-```
-
-### The Workflow
-1.  **Input a Ticker**: Type `NVDA`, `TSLA`, etc., in the sidebar or main input.
-2.  **Check the Score**:
-    *   **> 80 (Strong Buy)**: Convergence of Value and Momentum.
-    *   **< 40 (Sell/Avoid)**: Broken technicals or bad fundamentals.
-3.  **Read the Action Plan**: The AI will give you a specific plan (e.g., *"Wait for close above $125"*).
-4.  **Verify with Charts**: Look for the **Yellow Line (Weekly VWAP)**. If price is above it, institutions are supporting the move.
-
----
-
-## 📂 Project Structure
-
-*   **`main.py`**: The UI entry point (Streamlit). Handles all visualization and tab logic.
-*   **`logic/`**:
-    *   **`data_fetcher.py`**: Wraps `yfinance` and `duckduckgo_search`. Handles caching and error resilience.
-    *   **`technicals.py`**: The math engine. Calculates RSI, SMI, Squeeze, ADX using `pandas` and `ta`.
-    *   **`scorer.py`**: The weighted algorithm that produces the final 0-100 score and Hedge Fund verdict.
-    *   **`ai_analyst.py`**: Manages the LLM prompts and "Council" simulation.
-    *   **`scanner.py`**: High-performance multi-threaded engine for scanning the S&P 500.
-    *   **`discovery.py`**: NLP logic for clustering news into market themes.
-
----
-
-## 📉 Strategy Reference
-
-*   **The "Squeeze"**: When the white dots appear on the price candles, volatility is compressing. A violent move is imminent.
-*   **Relative Strength (RS)**: We compare the stock vs. its Sector ETF (e.g., NVDA vs. XLK). If RS > 0, it's a market leader.
-*   **RSI Regime**: We don't just use 30/70. We watch **40** as Bull Market Support and **60** as Bear Market Resistance.
+### Frontend Setup
+1.  Navigate to `/frontend`
+2.  Install dependencies: `npm install`
+3.  Run: `npm run dev`
 
 ---
 

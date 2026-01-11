@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sse-starlette
+yfinance
+pandas
+ta
+plotly
+openai
+python-dotenv
+duckduckgo-search>=6.0.0
+numpy
