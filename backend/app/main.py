@@ -16,6 +16,8 @@ from app.services.ai_analyst import analyze_sentiment, identify_competitors
 from app.services.scorer import calculate_score, calculate_hedge_fund_score
 from app.services.discovery import fetch_market_buzz, analyze_market_trends
 from app.services.scanner import get_sp500_tickers, scan_market
+from app.services.backtester import run_beast_backtest
+from app.services.macro import calculate_macro_correlations
 
 app = FastAPI(title="Ticker Analyzer Pro API")
 
@@ -36,9 +38,11 @@ def convert_numpy(obj):
     if isinstance(obj, np.integer):
         return int(obj)
     elif isinstance(obj, np.floating):
+        if np.isnan(obj) or np.isinf(obj):
+            return None
         return float(obj)
     elif isinstance(obj, np.ndarray):
-        return obj.tolist()
+        return [convert_numpy(i) for i in obj.tolist()]
     elif isinstance(obj, pd.Timestamp):
         return obj.strftime('%Y-%m-%d')
     elif isinstance(obj, (date, datetime)):
@@ -47,6 +51,8 @@ def convert_numpy(obj):
         return {k: convert_numpy(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_numpy(i) for i in obj]
+    elif pd.isna(obj): # Handle other pandas NA types
+        return None
     return obj
 
 @app.get("/api/stream/analyze/{ticker}")
@@ -64,7 +70,7 @@ async def stream_analysis(ticker: str, request: Request):
             
             df = await asyncio.to_thread(fetch_ticker_data, ticker)
             if df is None or df.empty:
-                yield {"event": "error", "data": json.dumps({"error": f"Ticker {ticker} not found"})}
+                yield {"event": "error", "data": json.dumps({"error": f"Ticker {ticker} not found or Yahoo Finance rate limited (429)."})}
                 return
 
             info = await asyncio.to_thread(fetch_company_info, ticker)
@@ -78,6 +84,10 @@ async def stream_analysis(ticker: str, request: Request):
             signals = get_latest_signals(df_tech)
             risk_metrics = calculate_risk_metrics(df)
             
+            # Step 2.5: Macro Alpha Hunter
+            macro_corrs = await asyncio.to_thread(calculate_macro_correlations, df)
+            info['macro_correlations'] = macro_corrs
+
             # Step 3: Contextual Data
             if await request.is_disconnected(): return
             yield {"event": "progress", "data": json.dumps({"percent": 50, "status": "Scanning options & social sentiment..."})}
@@ -161,7 +171,8 @@ async def stream_analysis(ticker: str, request: Request):
                 "peers": peer_data,
                 "analyst_actions": analyst_actions,
                 "chart_data": chart_json,
-                "options_data": options_data
+                "options_data": options_data,
+                "macro_correlations": macro_corrs
             }
             
             clean_payload = convert_numpy(payload)
@@ -187,7 +198,21 @@ async def scanner_feed(filter_strong_buy: bool = False):
     # but here we use the cached function.
     df = await asyncio.to_thread(scan_market, tickers)
     
-    if filter_strong_buy:
-        df = df[df['Recommendation'] == 'Strong Buy']
-    
-    return df.replace({np.nan: None}).to_dict(orient="records")
+@app.get("/api/backtest/{ticker}")
+async def get_backtest(ticker: str):
+    ticker = ticker.upper().strip()
+    try:
+        # Fetch 1 year of data for backtesting
+        df = await asyncio.to_thread(fetch_ticker_data, ticker, period="1y")
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="Ticker data not found")
+            
+        info = await asyncio.to_thread(fetch_company_info, ticker)
+        
+        # Use a neutral sentiment for historical if not available
+        result = await asyncio.to_thread(run_beast_backtest, ticker, df, info)
+        return convert_numpy(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

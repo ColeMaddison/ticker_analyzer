@@ -12,7 +12,7 @@ import { useMarketData } from "../hooks/useMarketData";
 
 export default function Dashboard() {
   const [inputTicker, setInputTicker] = useState("AAPL");
-  const { data, loading, progress, status, analyzeTicker } = useTickerAnalysis();
+  const { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting } = useTickerAnalysis();
   const { discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner } = useMarketData();
 
   useEffect(() => {
@@ -67,7 +67,12 @@ export default function Dashboard() {
 
           <TabsContent value="analysis">
             {data ? (
-              <AnalysisView data={data} onTickerSelect={handleAnalyze} />
+              <AnalysisView 
+                data={data} 
+                onTickerSelect={handleAnalyze} 
+                backtestResult={backtestResult}
+                isBacktesting={isBacktesting}
+              />
             ) : (
               <div className="h-[60vh] flex flex-col items-center justify-center text-zinc-700 gap-6">
                 <div className="p-10 rounded-full bg-zinc-900/30 border border-zinc-800/50"><Activity className="w-20 h-20 opacity-20 text-green-500" /></div>

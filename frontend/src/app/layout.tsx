@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ToastProvider } from "../components/ui";
 
 export const metadata = {
   title: "Ticker Analyzer Pro",
@@ -12,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-black text-white antialiased">{children}</body>
+      <body className="bg-black text-white antialiased">
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }

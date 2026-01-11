@@ -22,6 +22,10 @@ def calculate_technicals(df, sector_df=None):
     df["MACD_Hist"] = macd_ind.macd_diff()
     df["ADX"] = ADXIndicator(high=df["High"], low=df["Low"], close=df["Close"], window=14).adx()
     
+    # Moving Averages
+    df["SMA_50"] = df["Close"].rolling(window=50).mean()
+    df["SMA_200"] = df["Close"].rolling(window=200).mean()
+    
     # 2. Bollinger Bands
     bb = BollingerBands(close=df["Close"], window=20, window_dev=2)
     df["BB_Upper"] = bb.bollinger_hband()

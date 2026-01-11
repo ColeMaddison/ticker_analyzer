@@ -1,19 +1,28 @@
 import yfinance as yf
 import pandas as pd
+import time
+import random
 from duckduckgo_search import DDGS
 
+def retry_with_backoff(fn, *args, retries=3, backoff_in_seconds=2, **kwargs):
+    for i in range(retries):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            if i == retries - 1: raise
+            sleep_time = (backoff_in_seconds * (2 ** i)) + random.uniform(0, 1)
+            time.sleep(sleep_time)
+
 def fetch_ticker_data(ticker_symbol, period="6mo", interval="1d"):
-    """
-    Fetches historical OHLCV data for the given ticker.
-    """
+    """Fetches historical OHLCV data with retry/backoff."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        df = ticker.history(period=period, interval=interval)
-        if df.empty:
+        df = retry_with_backoff(ticker.history, period=period, interval=interval)
+        if df is None or df.empty:
             return None
         return df
     except Exception as e:
-        print(f"Error fetching ticker data: {e}")
+        print(f"Error fetching ticker data for {ticker_symbol}: {e}")
         return None
 
 def fetch_sector_benchmark(sector_name):
@@ -38,11 +47,11 @@ def fetch_sector_benchmark(sector_name):
 
 def fetch_company_info(ticker_symbol):
     """
-    Fetches fundamental data like P/E, Sector, Recommendations.
+    Fetches fundamental data with retry/backoff.
     """
     try:
         ticker = yf.Ticker(ticker_symbol)
-        info = ticker.info
+        info = retry_with_backoff(lambda: ticker.info, retries=2)
         
         # Robust recommendation extraction
         rec = info.get("recommendationKey")
@@ -109,8 +118,9 @@ def fetch_company_info(ticker_symbol):
             "news_velocity": len(fetch_news(ticker_symbol, limit=20)) / 24 # Mock velocity: items per hour window
         }
     except Exception as e:
-        print(f"Error fetching company info: {e}")
+        print(f"Error fetching company info for {ticker_symbol}: {e}")
         return {}
+
 
 def fetch_vix_level():
     try:
@@ -147,7 +157,14 @@ def fetch_earnings_history(symbol):
     """Fetches last 4 quarters of EPS surprise data."""
     try:
         t = yf.Ticker(symbol)
-        df = t.earnings_dates
+        # yfinance earnings_dates is prone to 401 errors
+        df = None
+        try:
+            df = t.earnings_dates
+        except Exception as e:
+            print(f"Yahoo 401 Error on earnings_dates for {symbol}: {e}")
+            return []
+            
         if df is None or df.empty: return []
         df = df.dropna(subset=['Actual', 'EPS Estimate']).head(4)
         history = []
@@ -167,7 +184,14 @@ def fetch_insider_cluster(ticker_symbol):
     """
     try:
         ticker = yf.Ticker(ticker_symbol)
-        trans = ticker.insider_transactions
+        # yfinance insider_transactions is prone to 401 errors
+        trans = None
+        try:
+            trans = ticker.insider_transactions
+        except Exception as e:
+            print(f"Yahoo 401 Error on insider_transactions for {ticker_symbol}: {e}")
+            return False
+            
         if trans is None or trans.empty:
             return False
         purchases = trans[trans['Text'].str.contains('Purchase', case=False, na=False)]

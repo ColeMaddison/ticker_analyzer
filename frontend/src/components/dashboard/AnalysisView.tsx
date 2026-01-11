@@ -4,9 +4,6 @@ import { AdvancedChart } from "../AdvancedChart";
 import { Zap, ShieldAlert, Brain, HelpCircle, CheckSquare, Square } from "lucide-react";
 import { parseMarkdown } from "../../lib/utils";
 import { TickerData } from "../../types";
-import plotly from 'plotly.js-dist'; 
-// Note: AdvancedChart handles Recharts, but previous code used Plotly. 
-// We are sticking to Recharts as per the AdvancedChart.tsx implementation.
 
 const Metric = ({ label, value, sub, tip, color = "text-white" }: any) => (
   <Card className="bg-zinc-900/30 border-zinc-800/50 backdrop-blur-sm group hover:border-zinc-700 transition-all overflow-visible">
@@ -32,7 +29,7 @@ const Row = ({ label, val }: any) => (
   </div>
 );
 
-export const AnalysisView = ({ data, onTickerSelect }: { data: TickerData, onTickerSelect: (t: string) => void }) => {
+export const AnalysisView = ({ data, onTickerSelect, backtestResult, isBacktesting }: { data: TickerData, onTickerSelect: (t: string) => void, backtestResult: any, isBacktesting: boolean }) => {
   const { score, score_breakdown: sb } = data;
   
   const beast = useMemo(() => {
@@ -92,161 +89,265 @@ export const AnalysisView = ({ data, onTickerSelect }: { data: TickerData, onTic
         <Metric label="Upside" value={`${data.metrics.upside.toFixed(1)}%`} color={data.metrics.upside>0?"text-green-400":"text-red-400"} tip="Distance from current price to average analyst price target." />
       </div>
 
-      {/* 2. Decision Maker's Summary Row (Visible without scrolling) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {/* THE BEAST SCORE - Decision Matrix */}
-        <Card className="bg-[#0A0A0A] border-zinc-800 h-full relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 right-0 p-2 opacity-10"><Zap className="w-12 h-12 rotate-12" /></div>
-          <CardHeader className="py-3 border-b border-zinc-800/50 bg-zinc-900/20"><CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-2">THE BEAST SCORE</CardTitle></CardHeader>
-          <CardContent className="pt-6 space-y-4">
-             <div className="text-center">
-                <div className="text-5xl font-black font-mono tracking-tighter mb-1" style={{ color: beast.color }}>{score}</div>
-                <div className="text-xs font-black tracking-widest uppercase mb-2" style={{ color: beast.color }}>{beast.label}</div>
-                <p className="text-[9px] text-zinc-500 font-bold leading-tight px-4">{beast.desc}</p>
-             </div>
-             
-             <div className="flex justify-center gap-1.5 py-3 border-y border-zinc-800/50">
-                {[
-                    { n: 'T', l: 'Technicals', s: sb.technical_score, d: 'RSI regimes, MACD divergence, and SMI momentum.' },
-                    { n: 'M', l: 'Momentum', s: sb.momentum_score, d: 'Trend strength via ADX, RS vs Sector, and VWAP.' },
-                    { n: 'S', l: 'Smart Money', s: sb.smart_money_score, d: 'Institutional flow, insider buying, and short interest.' },
-                    { n: 'Q', l: 'Quality', s: sb.quality_score, d: 'Growth valuation (PEG), cash flow, and safety scores.' },
-                    { n: 'E', l: 'Edge', s: sb.edge_score, d: 'Sector rotation, news velocity, and market-wide VIX panic.' }
-                ].map(engine => (
-                    <Tooltip key={engine.n} content={`${engine.l.toUpperCase()} (${engine.s}/100): ${engine.d}`}>
-                        <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black border transition-all ${engine.s >= 75 ? 'bg-green-500/20 border-green-500 text-green-400' : engine.s >= 40 ? 'bg-zinc-800 border-zinc-700 text-zinc-500' : 'bg-red-500/20 border-red-500 text-red-400'}`}>
-                            {engine.n}
+      {/* 2. Primary Decision Maker Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* THE BEAST SCORE */}
+        <div className="lg:col-span-3">
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-2 opacity-10"><Zap className="w-12 h-12 rotate-12" /></div>
+                <CardHeader className="py-3 border-b border-zinc-800/50 bg-zinc-900/20 flex flex-row justify-between items-center">
+                    <CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400">THE BEAST SCORE</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                    <div className="text-center">
+                        <div className="text-5xl font-black font-mono tracking-tighter mb-1" style={{ color: beast.color }}>{score}</div>
+                        <div className="text-xs font-black tracking-widest uppercase mb-2" style={{ color: beast.color }}>{beast.label}</div>
+                        <p className="text-[9px] text-zinc-500 font-bold leading-tight px-4">{beast.desc}</p>
+                    </div>
+                    
+                    <div className="flex justify-center gap-1.5 py-3 border-y border-zinc-800/50">
+                        {[
+                            { n: 'T', l: 'Technicals', s: sb.technical_score, d: 'RSI regimes, MACD divergence, and SMI momentum.' },
+                            { n: 'M', l: 'Momentum', s: sb.momentum_score, d: 'Trend strength via ADX, RS vs Sector, and VWAP.' },
+                            { n: 'S', l: 'Smart Money', s: sb.smart_money_score, d: 'Institutional flow, insider buying, and short interest.' },
+                            { n: 'Q', l: 'Quality', s: sb.quality_score, d: 'Growth valuation (PEG), cash flow, and safety scores.' },
+                            { n: 'E', l: 'Edge', s: sb.edge_score, d: 'Sector rotation, news velocity, and market-wide VIX panic.' }
+                        ].map(engine => (
+                            <Tooltip key={engine.n} content={`${engine.l.toUpperCase()} (${engine.s}/100): ${engine.d}`}>
+                                <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black border transition-all ${engine.s >= 75 ? 'bg-green-500/20 border-green-500 text-green-400' : engine.s >= 40 ? 'bg-zinc-800 border-zinc-700 text-zinc-500' : 'bg-red-500/20 border-red-500 text-red-400'}`}>
+                                    {engine.n}
+                                </div>
+                            </Tooltip>
+                        ))}
+                    </div>
+
+                    <div className="space-y-1">
+                        <Row label="Tech Engine" val={sb.technical_score} />
+                        <Row label="Smart Money" val={sb.smart_money_score} />
+                        <Row label="Quality Engine" val={sb.quality_score} />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* BEAST BACKTESTER */}
+        <div className="lg:col-span-9">
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full shadow-2xl relative overflow-hidden">
+                <CardHeader className="py-3 border-b border-zinc-800/50 bg-zinc-900/20 flex flex-row justify-between items-center">
+                    <CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-2">Strategy Backtest (12-Month Performance)</CardTitle>
+                    {isBacktesting && <div className="text-[8px] font-black text-green-500 animate-pulse uppercase tracking-widest">Simulating...</div>}
+                </CardHeader>
+                <CardContent className="pt-6">
+                    {backtestResult ? (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 h-full">
+                            <div className="md:col-span-1 flex flex-col justify-center border-r border-zinc-800/50 pr-8">
+                                <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total Beast Return</div>
+                                <div className={`text-5xl font-black font-mono tracking-tighter ${backtestResult.total_beast_return > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {backtestResult.total_beast_return > 0 ? '+' : ''}{backtestResult.total_beast_return}%
+                                </div>
+                                <div className={`mt-2 text-[10px] font-bold px-2 py-1 rounded w-fit ${backtestResult.performance_vs_market > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {backtestResult.performance_vs_market > 0 ? 'Alpha Detected' : 'Underperforming Market'}
+                                </div>
+                            </div>
+                            <div className="md:col-span-3 grid grid-cols-3 gap-6 items-center">
+                                <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">
+                                    <div className="text-[9px] font-black text-zinc-600 uppercase mb-2">Buy & Hold</div>
+                                    <div className="text-2xl font-black font-mono text-zinc-400">{backtestResult.buy_hold_return > 0 ? '+' : ''}{backtestResult.buy_hold_return}%</div>
+                                    <div className="text-[8px] text-zinc-700 mt-1 font-bold italic">Stock raw performance</div>
+                                </div>
+                                <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">
+                                    <div className="text-[9px] font-black text-zinc-600 uppercase mb-2">Win Rate</div>
+                                    <div className="text-2xl font-black font-mono text-blue-400">{backtestResult.win_rate}%</div>
+                                    <div className="text-[8px] text-zinc-700 mt-1 font-bold italic">{backtestResult.trade_count} Total Trades</div>
+                                </div>
+                                <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">
+                                    <div className="text-[9px] font-black text-zinc-600 uppercase mb-2">Strategy Edge</div>
+                                    <div className={`text-2xl font-black font-mono ${backtestResult.performance_vs_market > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {backtestResult.performance_vs_market > 0 ? '+' : ''}{backtestResult.performance_vs_market}%
+                                    </div>
+                                    <div className="text-[8px] text-zinc-700 mt-1 font-bold italic">Return vs Buy & Hold</div>
+                                </div>
+                            </div>
                         </div>
-                    </Tooltip>
-                ))}
-             </div>
-
-             <div className="space-y-1">
-                <Row label="Tech" val={sb.technical_score} />
-                <Row label="Smart" val={sb.smart_money_score} />
-                <Row label="Qual" val={sb.quality_score} />
-             </div>
-          </CardContent>
-        </Card>
-
-        {/* Smart Money Engine */}
-        <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
-          <CardHeader className="py-3 border-b border-zinc-800/50"><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><ShieldAlert className="w-3 h-3"/> Smart Money</CardTitle></CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">Accumulation</span>
-                <span className={`text-[10px] font-black ${(data.info.institutions_percent > 0.6 && data.signals.volume_ratio > 1.2) ? 'text-green-400' : 'text-zinc-600'}`}>
-                    {(data.info.institutions_percent > 0.6 && data.signals.volume_ratio > 1.2) ? "ACCUMULATING" : "NEUTRAL"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">Squeeze</span>
-                <span className={`text-[10px] font-black ${data.info.short_ratio > 5 ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
-                    {data.info.short_ratio > 5 ? "POTENTIAL" : "LOW"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">Insiders</span>
-                <span className={`text-[10px] font-black ${data.info.insider_buying_cluster ? 'text-green-400' : 'text-zinc-600'}`}>
-                    {data.info.insider_buying_cluster ? "BUYING" : "NONE"}
-                </span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center px-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-600">Inst. Own</span>
-                <span className="text-xs font-mono font-bold text-white">{(data.info.institutions_percent*100).toFixed(1)}%</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quality Engine */}
-        <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
-          <CardHeader className="py-3 border-b border-zinc-800/50"><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><HelpCircle className="w-3 h-3"/> Quality Engine</CardTitle></CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">PEG Ratio</span>
-                <span className={`text-[10px] font-black ${data.info.peg_ratio === null ? 'text-zinc-600' : data.info.peg_ratio < 1 ? 'text-green-400' : data.info.peg_ratio > 2 ? 'text-red-400' : 'text-zinc-400'}`}>
-                    {data.info.peg_ratio !== null ? data.info.peg_ratio.toFixed(2) : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">FCF Yield</span>
-                <span className={`text-[10px] font-black ${data.info.fcf_yield === null ? 'text-zinc-600' : data.info.fcf_yield > 0.05 ? 'text-green-400' : 'text-zinc-400'}`}>
-                    {data.info.fcf_yield !== null ? (data.info.fcf_yield * 100).toFixed(1) + "%" : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">Altman Z</span>
-                <span className={`text-[10px] font-black ${data.info.altman_z === null ? 'text-zinc-600' : data.info.altman_z < 1.8 ? 'text-red-500' : 'text-green-500'}`}>
-                    {data.info.altman_z !== null ? data.info.altman_z.toFixed(2) : "N/A"}
-                </span>
-              </div>
-            </div>
-            {data.info.altman_z !== null && data.info.altman_z < 1.8 && (
-                <div className="text-[7px] bg-red-500/10 text-red-400 p-1 rounded border border-red-500/20 font-black uppercase text-center animate-pulse tracking-tighter">
-                    ⚠️ INSOLVENCY RISK
-                </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Edge Engine */}
-        <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
-          <CardHeader className="py-3 border-b border-zinc-800/50"><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><Brain className="w-3 h-3"/> Edge Engine</CardTitle></CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">Rotation</span>
-                <span className={`text-[10px] font-black ${data.info.sector_rotation === 'Leading' ? 'text-green-400' : data.info.sector_rotation === 'Improving' ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                    {data.info.sector_rotation?.toUpperCase()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">News Vel.</span>
-                <span className={`text-[10px] font-black ${data.info.news_velocity > 0.8 ? 'text-red-400' : 'text-zinc-600'}`}>
-                    {data.info.news_velocity > 0.8 ? "OVERHEATED" : "NORMAL"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] uppercase font-bold text-zinc-500">VIX Status</span>
-                <span className={`text-[10px] font-black ${data.info.vix_level > 30 ? 'text-red-500 animate-pulse' : 'text-zinc-500'}`}>
-                    {data.info.vix_level > 30 ? "PANIC" : "CALM"}
-                </span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center px-1">
-                <span className="text-[9px] uppercase font-bold text-zinc-600">Market VIX</span>
-                <span className={`text-xs font-mono font-bold ${data.info.vix_level > 30 ? 'text-red-400' : 'text-white'}`}>{data.info.vix_level?.toFixed(2)}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Hedge Fund Pulse / Verdict */}
-        <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
-          <CardHeader className="py-3 border-b border-zinc-800/50"><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><ShieldAlert className="w-3 h-3"/> Fund Verdict</CardTitle></CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50 text-center">
-              <div className="text-[9px] uppercase font-black text-zinc-600 mb-0.5 tracking-tighter">Institutional Verdict</div>
-              <div className="text-xs font-black text-green-400">{data.hedge_fund.verdict}</div>
-            </div>
-            <Progress value={data.hedge_fund.score} className="h-1 bg-zinc-900" />
-            <div className="grid grid-cols-2 gap-2">
-              <div><div className="text-[9px] uppercase font-bold text-zinc-600 tracking-tighter">Sharpe</div><div className="text-xs font-mono font-bold text-white">{data.metrics.sharpe?.toFixed(2)}</div></div>
-              <div><div className="text-[9px] uppercase font-bold text-zinc-600 tracking-tighter">Drawdown</div><div className="text-xs font-mono font-bold text-red-400">{(data.metrics.drawdown*100).toFixed(1)}%</div></div>
-            </div>
-          </CardContent>
-        </Card>
+                    ) : isBacktesting ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <div className="w-10 h-10 border-2 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
+                            <div className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Crunching 1Y Historical Data...</div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center py-12 text-zinc-700 text-xs font-black uppercase tracking-widest">Wait for engine warmup...</div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
       </div>
 
-      {/* 3. Action Plan (Full Width) */}
-      <Card className="border-l-4 border-l-green-500 bg-green-500/[0.02] border-zinc-800 shadow-[0_0_30px_rgba(34,197,94,0.05)]">
-        <CardHeader className="py-3"><CardTitle className="text-green-400 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"><Brain className="w-4 h-4" /> Recommended Action Plan</CardTitle></CardHeader>
-        <CardContent className="text-sm leading-relaxed text-zinc-200 font-medium pb-4">
-          <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: parseMarkdown(data.ai_analysis.recommended_action.replace(/\$/g, '')) }} />
-        </CardContent>
-      </Card>
+      {/* 3. Secondary Analysis Row (Stacked Engines & Action Plan) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 2x2 Engine Grid */}
+        <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Smart Money Engine */}
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
+                <CardHeader className="py-2.5 border-b border-zinc-800/50 flex flex-row items-center gap-2"><ShieldAlert className="w-3 h-3 text-zinc-500"/><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Smart Money</CardTitle></CardHeader>
+                <CardContent className="space-y-2.5 pt-3">
+                    <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Accumulation</span>
+                            <span className={`text-[10px] font-black ${(data.info.institutions_percent > 0.6 && data.signals.volume_ratio > 1.2) ? 'text-green-400' : 'text-zinc-600'}`}>
+                                {(data.info.institutions_percent > 0.6 && data.signals.volume_ratio > 1.2) ? "BUYING" : "NEUTRAL"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Squeeze</span>
+                            <span className={`text-[10px] font-black ${data.info.short_ratio > 5 ? 'text-orange-400 animate-pulse' : 'text-zinc-600'}`}>
+                                {data.info.short_ratio > 5 ? "POTENTIAL" : "LOW"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Insiders</span>
+                            <span className={`text-[10px] font-black ${data.info.insider_buying_cluster ? 'text-green-400' : 'text-zinc-600'}`}>
+                                {data.info.insider_buying_cluster ? "BUYING" : "NONE"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-[9px] uppercase font-bold text-zinc-600 tracking-tighter text-zinc-500">Inst. Ownership</span>
+                        <span className="text-xs font-mono font-bold text-zinc-300">{(data.info.institutions_percent*100).toFixed(1)}%</span>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Quality Engine */}
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
+                <CardHeader className="py-2.5 border-b border-zinc-800/50 flex flex-row items-center gap-2"><HelpCircle className="w-3 h-3 text-zinc-500"/><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Quality Engine</CardTitle></CardHeader>
+                <CardContent className="space-y-2.5 pt-3">
+                    <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">PEG Ratio</span>
+                            <span className={`text-[10px] font-black ${data.info.peg_ratio === null ? 'text-zinc-600' : data.info.peg_ratio < 1 ? 'text-green-400' : data.info.peg_ratio > 2 ? 'text-red-400' : 'text-zinc-400'}`}>
+                                {data.info.peg_ratio !== null ? data.info.peg_ratio.toFixed(2) : "N/A"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">FCF Yield</span>
+                            <span className={`text-[10px] font-black ${data.info.fcf_yield === null ? 'text-zinc-600' : data.info.fcf_yield > 0.05 ? 'text-green-400' : 'text-zinc-400'}`}>
+                                {data.info.fcf_yield !== null ? (data.info.fcf_yield * 100).toFixed(1) + "%" : "N/A"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Altman Z</span>
+                            <span className={`text-[10px] font-black ${data.info.altman_z === null ? 'text-zinc-600' : data.info.altman_z < 1.8 ? 'text-red-500' : 'text-green-500'}`}>
+                                {data.info.altman_z !== null ? data.info.altman_z.toFixed(2) : "N/A"}
+                            </span>
+                        </div>
+                    </div>
+                    {data.info.altman_z !== null && data.info.altman_z < 1.8 && (
+                        <div className="text-[7px] bg-red-500/10 text-red-400 p-1 rounded border border-red-500/20 font-black uppercase text-center animate-pulse tracking-tighter">
+                            ⚠️ INSOLVENCY RISK
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Edge Engine */}
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full">
+                <CardHeader className="py-2.5 border-b border-zinc-800/50 flex flex-row items-center gap-2"><Brain className="w-3 h-3 text-zinc-500"/><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Edge Engine</CardTitle></CardHeader>
+                <CardContent className="space-y-2.5 pt-3">
+                    <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Rotation</span>
+                            <span className={`text-[10px] font-black ${data.info.sector_rotation === 'Leading' ? 'text-green-400' : data.info.sector_rotation === 'Improving' ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                {data.info.sector_rotation?.toUpperCase()}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">News Vel.</span>
+                            <span className={`text-[10px] font-black ${data.info.news_velocity > 0.8 ? 'text-red-400' : 'text-zinc-600'}`}>
+                                {data.info.news_velocity > 0.8 ? "OVERHEATED" : "NORMAL"}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[9px] uppercase font-bold text-zinc-500">Market VIX</span>
+                            <span className={`text-[10px] font-black ${data.info.vix_level > 30 ? 'text-red-500 animate-pulse' : 'text-zinc-500'}`}>
+                                {data.info.vix_level > 30 ? "PANIC" : "CALM"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-[9px] uppercase font-bold text-zinc-600 tracking-tighter text-zinc-500">Current VIX</span>
+                        <span className={`text-xs font-mono font-bold ${data.info.vix_level > 30 ? 'text-red-400' : 'text-zinc-300'}`}>{data.info.vix_level?.toFixed(2)}</span>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Fund Verdict */}
+            <Card className="bg-[#0A0A0A] border-zinc-800 h-full shadow-lg">
+                <CardHeader className="py-2.5 border-b border-zinc-800/50 flex flex-row items-center gap-2"><ShieldAlert className="w-3 h-3 text-zinc-500"/><CardTitle className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Fund Verdict</CardTitle></CardHeader>
+                <CardContent className="space-y-3 pt-3">
+                    <div className="bg-zinc-900/50 p-2.5 rounded border border-zinc-800/50 text-center">
+                        <div className="text-[8px] uppercase font-black text-zinc-600 mb-0.5 tracking-tighter">Institutional Verdict</div>
+                        <div className="text-xs font-black text-green-400 uppercase">{data.hedge_fund.verdict}</div>
+                    </div>
+                    <Progress value={data.hedge_fund.score} className="h-1 bg-zinc-900" />
+                    <div className="grid grid-cols-2 gap-2">
+                        <div><div className="text-[8px] uppercase font-bold text-zinc-600 tracking-tighter">Sharpe</div><div className="text-xs font-mono font-bold text-white">{data.metrics.sharpe?.toFixed(2)}</div></div>
+                        <div><div className="text-[8px] uppercase font-bold text-zinc-600 tracking-tighter">Drawdown</div><div className="text-xs font-mono font-bold text-red-400">{(data.metrics.drawdown*100).toFixed(1)}%</div></div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* AI Verdict (Full Visibility) */}
+        <div className="lg:col-span-6">
+            <Card className="border-l-4 border-l-green-500 bg-green-500/[0.02] border-zinc-800 shadow-[0_0_30px_rgba(34,197,94,0.05)] h-full">
+                <CardHeader className="py-3 border-b border-zinc-800/50 bg-zinc-900/10"><CardTitle className="text-green-400 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"><Brain className="w-4 h-4" /> Strategic Action Plan</CardTitle></CardHeader>
+                <CardContent className="text-sm leading-relaxed text-zinc-200 font-medium py-5">
+                    <div className="prose prose-invert prose-sm max-w-none scrollbar-thin overflow-y-auto max-h-[300px]" dangerouslySetInnerHTML={{ __html: parseMarkdown(data.ai_analysis.recommended_action.replace(/\$/g, '')) }} />
+                </CardContent>
+            </Card>
+        </div>
+      </div>
+
+      {/* 3.5 Alpha Hunter Macro Matrix */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <Card className="lg:col-span-12 bg-[#0A0A0A] border-zinc-800 overflow-hidden shadow-2xl">
+            <CardHeader className="py-3 border-b border-zinc-800/50 bg-zinc-900/20 flex flex-row justify-between items-center">
+                <CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-2">ALPHA HUNTER: MACRO CORRELATIONS</CardTitle>
+                <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">90-Day Asset Alignment</div>
+            </CardHeader>
+            <CardContent className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    {data.macro_correlations && Object.entries(data.macro_correlations).map(([name, d]: [string, any]) => {
+                        const isBullish = (d.value < -0.5 && d.trend === "Falling") || (d.value > 0.5 && d.trend === "Rising");
+                        const isBearish = (d.value > 0.5 && d.trend === "Falling") || (d.value < -0.5 && d.trend === "Rising");
+                        
+                        return (
+                            <div key={name} className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4 transition-all hover:border-zinc-700 group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300">{name}</span>
+                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${d.trend === "Rising" ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                        {d.trend.toUpperCase()}
+                                    </span>
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <div className={`text-xl font-black font-mono ${Math.abs(d.value) > 0.6 ? (isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-white') : 'text-zinc-400'}`}>
+                                        {d.value.toFixed(2)}
+                                    </div>
+                                    <div className="text-[8px] text-zinc-600 font-bold mb-1 uppercase tracking-tighter">Correlation</div>
+                                </div>
+                                <div className="mt-3 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-500 ${isBullish ? 'bg-green-500' : isBearish ? 'bg-red-500' : 'bg-zinc-600'}`}
+                                        style={{ width: `${Math.abs(d.value) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </CardContent>
+        </Card>
+      </div>
 
       {/* 4. Deep Dive Row (Chart & Details) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

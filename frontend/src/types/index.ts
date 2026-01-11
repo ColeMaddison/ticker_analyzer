@@ -51,6 +51,13 @@ export interface TickerData {
   analyst_actions: any[];
   chart_data: any[];
   options_data: any;
+  macro_correlations?: {
+    [key: string]: {
+      value: number;
+      trend: "Rising" | "Falling";
+      symbol: string;
+    };
+  };
 }
 
 export interface DiscoveryTheme {

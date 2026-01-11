@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -114,3 +116,66 @@ export const Tooltip = ({ children, content }: { children: React.ReactNode, cont
     </div>
   )
 }
+
+// --- Toast Implementation ---
+
+export type ToastType = "info" | "error" | "success" | "warning";
+
+export interface ToastMessage {
+  id: string;
+  type: ToastType;
+  message: string;
+}
+
+type ToastContextType = {
+  addToast: (message: string, type: ToastType) => void;
+};
+
+const ToastContext = React.createContext<ToastContextType | null>(null);
+
+export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
+  const [toasts, setToasts] = React.useState<ToastMessage[]>([]);
+
+  const addToast = React.useCallback((message: string, type: ToastType = "info") => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 5000);
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ addToast }}>
+      {children}
+      <div className="fixed bottom-4 left-4 z-[100] flex flex-col gap-2 w-80">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={cn(
+              "p-4 rounded-lg border shadow-2xl animate-in slide-in-from-left-5 fade-in duration-300 flex items-center gap-3",
+              t.type === "error" ? "bg-red-950 border-red-500/50 text-red-200" :
+              t.type === "success" ? "bg-green-950 border-green-500/50 text-green-200" :
+              t.type === "warning" ? "bg-orange-950 border-orange-500/50 text-orange-200" :
+              "bg-zinc-900 border-zinc-700 text-zinc-200"
+            )}
+          >
+            <div className={cn(
+              "w-2 h-2 rounded-full shrink-0 animate-pulse",
+              t.type === "error" ? "bg-red-500" :
+              t.type === "success" ? "bg-green-500" :
+              t.type === "warning" ? "bg-orange-500" :
+              "bg-blue-500"
+            )} />
+            <div className="text-xs font-bold leading-tight">{t.message}</div>
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+
+export const useToast = () => {
+  const context = React.useContext(ToastContext);
+  if (!context) throw new Error("useToast must be used within ToastProvider");
+  return context;
+};

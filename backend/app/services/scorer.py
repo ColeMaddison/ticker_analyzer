@@ -18,6 +18,12 @@ def calculate_score(signals, info, ai_result, options_data=None, analyst_actions
     rsi = signals.get('rsi', 50)
     if signals.get('rsi_prev', 50) <= 40 and rsi > 40: t_points += 20 
     if signals.get('macd_div'): t_points += 25 
+    
+    # Trend Support (New)
+    close = signals.get('close', 0)
+    sma50 = signals.get('sma_50', 0)
+    if sma50 and close > sma50: t_points += 15
+    
     if signals.get('smi', 0) < -40: t_points += 10
     score_breakdown["technical_score"] = max(0, min(100, t_points))
 
@@ -57,6 +63,19 @@ def calculate_score(signals, info, ai_result, options_data=None, analyst_actions
     elif rot == "Improving": e_points += 15
     elif rot == "Lagging": e_points -= 15
     
+    # Macro Correlation Boost (Alpha Hunter)
+    macro_corrs = info.get('macro_correlations', {})
+    macro_boost = 0
+    for asset, data in macro_corrs.items():
+        corr = data.get('value', 0)
+        trend = data.get('trend', 'Neutral')
+        # Inverse correlation with falling yields/dollar is bullish for tech
+        if corr < -0.6 and trend == "Falling": macro_boost += 10
+        # Positive correlation with rising market/btc
+        elif corr > 0.6 and trend == "Rising": macro_boost += 10
+    
+    e_points += min(20, macro_boost) # Cap macro boost
+
     # News Velocity (3-sigma proxy)
     if info.get('news_velocity', 0) > 0.8: e_points -= 20 # Overheated
     
