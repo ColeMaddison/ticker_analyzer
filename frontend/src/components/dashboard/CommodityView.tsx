@@ -66,13 +66,83 @@ export function CommodityView() {
                   }`}>
                     {data.strategy.verdict}
                   </Badge>
-                  <span className="text-xs font-bold text-zinc-500">SCORE: <span className="text-white">{data.strategy.relevance_score}/100</span></span>
+                  <span className="text-xs font-bold text-zinc-500">VETERAN SCORE: <span className={`${(data.veteran_metrics?.score || 50) > 65 ? 'text-green-500' : (data.veteran_metrics?.score || 50) < 35 ? 'text-red-500' : 'text-amber-500'}`}>{data.veteran_metrics?.score ?? data.strategy.relevance_score}/100</span></span>
                 </div>
               </div>
             </div>
 
             {/* Chart */}
             <AdvancedChart data={data.chart_data} />
+
+            {/* Veteran's Scorecard (Ironclad Indices) */}
+            {data.veteran_metrics && (
+              <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-black text-amber-500 uppercase flex items-center gap-2">
+                    <Target className="w-4 h-4" /> Veteran's Filter (2026 Ironclad Indices)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    {/* DXY */}
+                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Liquidity (DXY)</div>
+                      <div className={`text-xl font-mono font-bold ${data.veteran_metrics.dxy_level < 98 ? 'text-green-400' : data.veteran_metrics.dxy_level > 103 ? 'text-red-400' : 'text-zinc-300'}`}>
+                        {data.veteran_metrics.dxy_level}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Target: &lt; 98</div>
+                    </div>
+
+                    {/* MOVE Index */}
+                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Volatility (MOVE)</div>
+                      <div className={`text-xl font-mono font-bold ${data.veteran_metrics.move_index < 100 ? 'text-green-400' : data.veteran_metrics.move_index > 120 ? 'text-red-400' : 'text-zinc-300'}`}>
+                        {data.veteran_metrics.move_index}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Panic Level: &gt; 120</div>
+                    </div>
+
+                    {/* Real Yields */}
+                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Real Yields (TIP)</div>
+                      <div className={`text-xl font-mono font-bold ${data.veteran_metrics.real_yield_trend === 'Rising' ? 'text-green-400' : 'text-red-400'}`}>
+                        {data.veteran_metrics.real_yield_trend}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Rising Price = Buy</div>
+                    </div>
+
+                    {/* Ratios */}
+                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Au/Ag Ratio</div>
+                      <div className={`text-xl font-mono font-bold ${data.veteran_metrics.gold_silver_ratio > 80 ? 'text-green-400' : data.veteran_metrics.gold_silver_ratio < 60 ? 'text-red-400' : 'text-zinc-300'}`}>
+                        {data.veteran_metrics.gold_silver_ratio}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Buy Silver &gt; 80</div>
+                    </div>
+
+                     {/* Copper/Gold Ratio */}
+                     <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Cu/Au Ratio</div>
+                      <div className="text-xl font-mono font-bold text-zinc-300">
+                        {data.veteran_metrics.copper_gold_ratio}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Growth vs Fear</div>
+                    </div>
+
+                    {/* Logistics */}
+                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Logistics (BDI)</div>
+                      <div className="text-xl font-mono font-bold text-zinc-300">
+                        {data.veteran_metrics.baltic_dry}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1">Physical Flow</div>
+                    </div>
+
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Strategy Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10">

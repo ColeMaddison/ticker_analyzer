@@ -110,4 +110,14 @@ export interface CommodityAnalysis {
     rate_sensitivity: string;
     inflation_outlook: string;
   };
+  veteran_metrics?: {
+    score: number;
+    dxy_level: number;
+    move_index: number;
+    real_yield_trend: string;
+    copper_gold_ratio: number;
+    gold_silver_ratio: number;
+    baltic_dry: number;
+    carbon_credits: number;
+  };
 }

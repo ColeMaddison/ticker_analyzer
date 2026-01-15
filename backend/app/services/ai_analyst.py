@@ -127,8 +127,8 @@ def identify_competitors(ticker):
 
 def analyze_commodity_strategy(commodity_name, technical_signals, macro_context, news):
     """
-    Generates a specialized Strategic Action Plan for commodities.
-    Considers macro factors, geopolitical risks, and technicals.
+    Generates a specialized Strategic Action Plan for commodities using Veteran 2026 Logic.
+    Considers macro factors (DXY, Real Yields), intermarket ratios, and logistics.
     """
     news_text = "No recent news."
     if news:
@@ -146,17 +146,30 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
         """
 
     macro_text = ""
+    veteran_metrics = macro_context.get("veteran_data", {})
+    
     if macro_context:
         macro_text = f"""
         MACRO DRIVERS:
         - USD Index (DXY) Correlation: {macro_context.get('dxy_correlation', 'N/A')}
         - Interest Rate Sensitivity: {macro_context.get('rate_sensitivity', 'N/A')}
         - Inflationary Environment: {macro_context.get('inflation_outlook', 'N/A')}
+        
+        VETERAN'S FILTER (2026 DATA):
+        - DXY Level: {veteran_metrics.get('dxy_level', 'N/A')} (Trigger: Buy < 98)
+        - MOVE Index: {veteran_metrics.get('move_index', 'N/A')} (Trigger: No Buy > 120)
+        - Real Yields (TIP Trend): {veteran_metrics.get('real_yield_trend', 'N/A')} (Rising TIP = Falling Yields = Buy Hard Assets)
+        - Copper/Gold Ratio: {veteran_metrics.get('copper_gold_ratio', 'N/A')} (Rising = Growth, Falling = Fear)
+        - Gold/Silver Ratio: {veteran_metrics.get('gold_silver_ratio', 'N/A')} (Trigger: Buy Silver > 80)
+        - Baltic Dry Index: {veteran_metrics.get('baltic_dry', 'N/A')} (Logistics Flow)
+        - Veteran Score: {veteran_metrics.get('score', 'N/A')}/100
         """
 
     prompt = f"""
-    You are a Global Commodities Strategist analyzing {commodity_name}.
-    Your goal is to provide a "Strategic Action Plan" based on technicals, macro factors, and news.
+    You are a Battle-Hardened Commodities Veteran in early 2026.
+    You ignore the noise and focus on "Ironclad Indices": DXY, Real Yields, Intermarket Ratios, and Physical Logistics (BDI).
+    
+    Analyze {commodity_name} based on the provided "Veteran's Filter" data.
 
     {tech_context}
     
@@ -165,10 +178,16 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
     RELEVANT NEWS/EVENTS:
     {news_text}
 
+    VETERAN'S RULES:
+    1. Liquidity First: If DXY > 103 or MOVE > 120, cash is king. Only specific supply shocks matter.
+    2. Ratios: Use Copper/Gold to judge Growth vs. Fear. Use Gold/Silver to find value.
+    3. Logistics: If Baltic Dry is crashing, demand is fake.
+    4. Real Yields: If Real Yields are falling (TIP rising), buy hard assets.
+
     TASK:
-    1. Analyze Supply/Demand dynamics based on the news and trends.
-    2. Evaluate Geopolitical Risks.
-    3. Assess the "Buy/Not Buy" relevance.
+    1. Analyze Supply/Demand dynamics (Physical Reality).
+    2. Evaluate Geopolitical Risks (The "2026 Filter").
+    3. Provide a "Veteran's Verdict" based *strictly* on the Macro Filters + Technicals.
     4. Formulate a specific Strategic Action Plan.
 
     STRICT FORMATING RULES:
@@ -177,11 +196,11 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
 
     JSON Structure:
     {{
-        "relevance_score": (int 0-100, where 100 is Strong Buy),
+        "relevance_score": (Use the Veteran Score provided in context, or adjust slightly based on news),
         "verdict": "Buy / Sell / Hold",
-        "supply_demand_analysis": "Markdown analysis of physical market tightness.",
-        "geopolitical_risks": "Markdown list of key risks.",
-        "macro_outlook": "How rates and currency impact this commodity.",
+        "supply_demand_analysis": "Markdown analysis. Reference BDI or specific supply constraints.",
+        "geopolitical_risks": "Markdown list of key risks (Export controls, OPEC+, etc.).",
+        "macro_outlook": "Analyze DXY, Real Yields, and Ratios here.",
         "action_plan": "DETAILED STRATEGY: Entry, Stops, Targets (use markdown list)."
     }}
     """
