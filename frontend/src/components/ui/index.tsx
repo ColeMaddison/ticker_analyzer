@@ -179,3 +179,25 @@ export const useToast = () => {
   if (!context) throw new Error("useToast must be used within ToastProvider");
   return context;
 };
+
+// --- New Components ---
+
+export const Separator = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("h-[1px] w-full bg-zinc-800", className)} {...props} />
+)
+
+export const Badge = ({ className, variant = "default", ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "outline" }) => {
+   const variants = {
+     default: "border-transparent bg-zinc-900 text-zinc-100 hover:bg-zinc-900/80",
+     outline: "text-zinc-100"
+   }
+   return (
+    <div className={cn("inline-flex items-center rounded-full border border-zinc-800 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2", variants[variant], className)} {...props} />
+   )
+}
+
+export const ScrollArea = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("overflow-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent", className)} {...props}>
+    {children}
+  </div>
+)

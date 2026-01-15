@@ -20,19 +20,28 @@ def scan_market(signal=None):
     try:
         # Map frontend signals to Finviz signal keys
         internal_signal = ""
+        filters_dict = {'Index': 'S&P 500'} # Default to S&P 500
+
         if signal == 'Vol. Squeeze':
             internal_signal = 'Volatility Squeeze'
+        elif signal == 'ROCKET':
+            internal_signal = 'Top Gainers'
+            # REMOVE S&P 500 filter for Rockets. Target Small Caps + Liquidity
+            filters_dict = {
+                'Market Cap.': '-Small (under $2bln)',
+                'Average Volume': 'Over 100K'
+            }
         elif signal:
             internal_signal = signal
 
-        print(f"Starting Manual S&P 500 Index Scan (Signal: {internal_signal})...")
+        print(f"Starting Scan... Signal: {internal_signal}, Filters: {filters_dict}")
         
         # 1. Configuration
         all_frames = []
         fcustom = Custom()
         
-        # Apply S&P 500 filter and the requested signal
-        fcustom.set_filter(filters_dict={'Index': 'S&P 500'}, signal=internal_signal)
+        # Apply filters and the requested signal
+        fcustom.set_filter(filters_dict=filters_dict, signal=internal_signal)
         
         # Correct Column Indices from finvizfinance metadata:
         # 1: Ticker, 6: Market Cap, 62: Analyst Recom, 59: RSI, 64: Rel Vol, 65: Price, 69: Target Price

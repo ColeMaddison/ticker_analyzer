@@ -124,3 +124,91 @@ def identify_competitors(ticker):
         if content.endswith("```"): content = content[:-3]
         return json.loads(content.strip())[:3]
     except: return []
+
+def analyze_commodity_strategy(commodity_name, technical_signals, macro_context, news):
+    """
+    Generates a specialized Strategic Action Plan for commodities.
+    Considers macro factors, geopolitical risks, and technicals.
+    """
+    news_text = "No recent news."
+    if news:
+        news_text = "\n".join([f"- {h}" for h in news])
+
+    tech_context = ""
+    if technical_signals:
+        tech_context = f"""
+        TECHNICAL DATA:
+        - Price: {technical_signals.get('price', 'N/A')}
+        - RSI: {technical_signals.get('rsi', 'N/A')}
+        - Trend (ADX): {technical_signals.get('adx', 'N/A')}
+        - SMA 50: {technical_signals.get('sma_50', 'N/A')}
+        - SMA 200: {technical_signals.get('sma_200', 'N/A')}
+        """
+
+    macro_text = ""
+    if macro_context:
+        macro_text = f"""
+        MACRO DRIVERS:
+        - USD Index (DXY) Correlation: {macro_context.get('dxy_correlation', 'N/A')}
+        - Interest Rate Sensitivity: {macro_context.get('rate_sensitivity', 'N/A')}
+        - Inflationary Environment: {macro_context.get('inflation_outlook', 'N/A')}
+        """
+
+    prompt = f"""
+    You are a Global Commodities Strategist analyzing {commodity_name}.
+    Your goal is to provide a "Strategic Action Plan" based on technicals, macro factors, and news.
+
+    {tech_context}
+    
+    {macro_text}
+
+    RELEVANT NEWS/EVENTS:
+    {news_text}
+
+    TASK:
+    1. Analyze Supply/Demand dynamics based on the news and trends.
+    2. Evaluate Geopolitical Risks.
+    3. Assess the "Buy/Not Buy" relevance.
+    4. Formulate a specific Strategic Action Plan.
+
+    STRICT FORMATING RULES:
+    - NEVER use the dollar sign symbol ($). Use 'USD' or just the number.
+    - Return ONLY a valid JSON object.
+
+    JSON Structure:
+    {{
+        "relevance_score": (int 0-100, where 100 is Strong Buy),
+        "verdict": "Buy / Sell / Hold",
+        "supply_demand_analysis": "Markdown analysis of physical market tightness.",
+        "geopolitical_risks": "Markdown list of key risks.",
+        "macro_outlook": "How rates and currency impact this commodity.",
+        "action_plan": "DETAILED STRATEGY: Entry, Stops, Targets (use markdown list)."
+    }}
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "You are a commodities expert. Output valid JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3, 
+        )
+        
+        content = completion.choices[0].message.content.strip()
+        if content.startswith("```json"): content = content[7:]
+        if content.endswith("```"): content = content[:-3]
+        
+        return json.loads(content.strip())
+    except Exception as e:
+        print(f"Commodity Analysis Error: {e}")
+        return {
+            "relevance_score": 50,
+            "verdict": "Neutral",
+            "supply_demand_analysis": "Error in analysis.",
+            "geopolitical_risks": "N/A",
+            "macro_outlook": "N/A",
+            "action_plan": "Stand aside due to system error."
+        }
+

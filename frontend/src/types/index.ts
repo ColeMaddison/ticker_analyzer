@@ -77,3 +77,37 @@ export interface ScannerResult {
   Recommendation: string;
   "Market Cap": number;
 }
+
+export interface CommodityItem {
+  id: string;
+  name: string;
+}
+
+export interface CommodityAnalysis {
+  id: string;
+  name: string;
+  ticker: string;
+  price: number;
+  technicals: any;
+  strategy: {
+    relevance_score: number;
+    verdict: string;
+    supply_demand_analysis: string;
+    geopolitical_risks: string;
+    macro_outlook: string;
+    action_plan: string;
+  };
+  chart_data: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    value: number;
+  }[];
+  macro_context: {
+    dxy_correlation: string;
+    rate_sensitivity: string;
+    inflation_outlook: string;
+  };
+}

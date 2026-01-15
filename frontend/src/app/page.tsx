@@ -7,6 +7,7 @@ import { AnalysisView } from "../components/dashboard/AnalysisView";
 import { DiscoveryView } from "../components/dashboard/DiscoveryView";
 import { ScannerView } from "../components/dashboard/ScannerView";
 import { StrategyView } from "../components/dashboard/StrategyView";
+import { CommodityView } from "../components/dashboard/CommodityView";
 import { useTickerAnalysis } from "../hooks/useTickerAnalysis";
 import { useMarketData } from "../hooks/useMarketData";
 
@@ -67,6 +68,7 @@ export default function Dashboard() {
               <TabsTrigger value="analysis" className="gap-2 font-bold text-xs uppercase px-4">📈 Analysis</TabsTrigger>
               <TabsTrigger value="discovery" onClick={() => fetchDiscovery(false, discoverySector)} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
               <TabsTrigger value="scanner" onClick={() => fetchScanner()} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
+              <TabsTrigger value="commodities" className="gap-2 font-bold text-xs uppercase px-4">🛢️ Commodities</TabsTrigger>
               <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Strategy</TabsTrigger>
             </TabsList>
           </div>
@@ -109,6 +111,10 @@ export default function Dashboard() {
 
           <TabsContent value="strategy">
             <StrategyView />
+          </TabsContent>
+
+          <TabsContent value="commodities">
+            <CommodityView />
           </TabsContent>
 
         </Tabs>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "../ui";
 import { ScannerResult } from "../../types";
-import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star, Zap } from "lucide-react";
+import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star, Zap, Rocket } from "lucide-react";
 
 export const ScannerView = ({ 
   data, scanning, onScan, onAnalyze,
@@ -81,8 +81,26 @@ export const ScannerView = ({
     <ArrowUpDown className={`w-3 h-3 ml-1 inline-block transition-colors ${sortConfig.key === column ? 'text-green-500' : 'text-zinc-600 group-hover:text-zinc-400'}`} />
   );
 
+  const isRocketMode = currentSignal === 'ROCKET';
+
   return (
     <div className="space-y-4">
+       {/* Market Scope Switcher */}
+       <div className="grid grid-cols-2 gap-2 bg-[#0A0A0A] p-1 rounded-xl border border-zinc-800">
+          <button 
+            onClick={() => onScan(true, null)}
+            className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${!isRocketMode ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            <span className="text-lg">🏢</span> S&P 500 Safe
+          </button>
+          <button 
+            onClick={() => onScan(true, 'ROCKET')}
+            className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${isRocketMode ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'text-zinc-500 hover:text-rose-400 hover:bg-rose-500/5'}`}
+          >
+            <span className="text-lg">🚀</span> Rocket Hunter
+          </button>
+       </div>
+
        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#0A0A0A] p-4 rounded-xl border border-zinc-800">
          
          <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">
@@ -135,23 +153,30 @@ export const ScannerView = ({
 
             <button 
                 onClick={() => onScan(true, currentSignal === 'Vol. Squeeze' ? null : 'Vol. Squeeze')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${currentSignal === 'Vol. Squeeze' ? 'bg-orange-500/20 border-orange-500 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-zinc-900/50 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${currentSignal === 'Vol. Squeeze' ? 'bg-orange-500/20 border-orange-500 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-zinc-900/50 border-zinc-700 text-zinc-500 hover:text-zinc-300'} ${isRocketMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isRocketMode}
+                title={isRocketMode ? "Available in S&P 500 Mode" : "Filter by Volatility Squeeze"}
             >
                 <Zap className={`w-3 h-3 ${currentSignal === 'Vol. Squeeze' ? 'fill-current' : ''}`} />
                 SQUEEZE
             </button>
          </div>
 
-         <button onClick={() => onScan(true, currentSignal)} className="w-full md:w-auto flex items-center gap-2 text-xs font-bold bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+         <button 
+            onClick={() => onScan(true, currentSignal)} 
+            className={`w-full md:w-auto flex items-center gap-2 text-xs font-bold px-6 py-2.5 rounded-lg transition-all active:scale-95 shadow-lg ${isRocketMode ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.3)]' : 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.2)]'}`}
+         >
            {scanning ? <span className="animate-spin">⏳</span> : <Play className="w-3 h-3 fill-current" />}
-           {scanning ? "SCANNING..." : "RUN SCANNER"}
+           {scanning ? (isRocketMode ? "HUNTING..." : "SCANNING...") : (isRocketMode ? "LAUNCH HUNT" : "RUN SCANNER")}
          </button>
        </div>
       
       {!data && scanning && (
         <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50 animate-pulse">
-            <div className="w-12 h-12 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
-            <p className="text-sm font-black uppercase tracking-widest text-zinc-500">Processing S&P 500 Index...</p>
+            <div className={`w-12 h-12 border-4 border-zinc-800 rounded-full animate-spin ${isRocketMode ? 'border-t-rose-500' : 'border-t-green-500'}`}></div>
+            <p className="text-sm font-black uppercase tracking-widest text-zinc-500">
+                {isRocketMode ? "Hunting High-Volatility Small Caps..." : "Processing S&P 500 Index..."}
+            </p>
         </div>
       )}
 
