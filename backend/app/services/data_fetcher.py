@@ -83,16 +83,69 @@ def fetch_company_info(symbol):
             # Count headlines in the last 48 hours as a proxy for velocity
             news_velocity = len(news_df) / 48 # Items per hour
 
+        # Extract PEG, Price, and FCF for logic and return
+        peg = p(fund.get('PEG'))
+        price = p(fund.get('Price'))
+        fcf_yield = (1 / p(fund.get('P/FCF'))) if p(fund.get('P/FCF')) else None
+
+        # BIOTECH / GROWTH METRICS (General Fallback for N/A Quality)
+        months_runway = None
+        monthly_burn = None
+        
+        # General fallback: If standard metrics are missing (common for new IPOs/Growth), dig deeper
+        if peg is None or fcf_yield is None or altman_z is None:
+            try:
+                t = yf.Ticker(symbol)
+                bs = t.balance_sheet
+                cf = t.cashflow
+                
+                # 1. Cash Runway Calculation
+                if not bs.empty:
+                    # Robust search for cash
+                    cash_items = ['Cash And Cash Equivalents', 'Other Short Term Investments', 'Cash Financial Assets']
+                    total_liquidity = sum([bs.loc[item].iloc[0] for item in cash_items if item in bs.index])
+                    
+                    if not cf.empty:
+                        # Operating Cash Flow (Annual)
+                        ocf = cf.loc['Operating Cash Flow'].iloc[0] if 'Operating Cash Flow' in cf.index else 0
+                        if ocf < 0:
+                            monthly_burn = abs(ocf) / 12
+                            if monthly_burn > 0:
+                                months_runway = total_liquidity / monthly_burn
+                                
+                    # 2. Altman Z Manual Proxy (Simplified for missing data)
+                    # Z = 1.2(Working Cap/Assets) + 1.4(Retained Earnings/Assets) + 3.3(EBIT/Assets) + 0.6(MV Equity/Liab) + 1.0(Sales/Assets)
+                    if altman_z is None and not bs.empty:
+                        try:
+                            total_assets = bs.loc['Total Assets'].iloc[0] if 'Total Assets' in bs.index else 1
+                            total_liab = bs.loc['Total Liabilities Net Minority Interest'].iloc[0] if 'Total Liabilities Net Minority Interest' in bs.index else 1
+                            mkt_cap = p(fund.get('Market Cap')) or (price * p(fund.get('Shs Outstand')) if price else 0)
+                            
+                            # Simple proxy for Altman Z if data is sparse: 
+                            # Focus on Solvency: Market Cap / Total Liabilities
+                            if total_liab > 0 and mkt_cap:
+                                altman_z = (mkt_cap / total_liab) * 0.6 + 1.0 # Base shift
+                        except: pass
+            except: pass
+
+        # Map Numeric Rec (1.0-5.0) to Granular Text
+        recom_val = p(fund.get('Recom'))
+        recommendation = "hold"
+        if recom_val:
+            if recom_val <= 1.5: recommendation = "strong_buy"
+            elif recom_val <= 2.5: recommendation = "buy"
+            elif recom_val > 3.5: recommendation = "sell"
+
         return {
             "symbol": symbol,
-            "current_price": p(fund.get('Price')),
+            "current_price": price,
             "previous_close": p(fund.get('Prev Close')),
             "sector": fund.get('Sector', 'Unknown'),
             "pe_ratio": p(fund.get('P/E')),
             "forward_pe": p(fund.get('Forward P/E')),
-            "peg_ratio": p(fund.get('PEG')),
+            "peg_ratio": peg,
             "market_cap": p(fund.get('Market Cap')),
-            "recommendation": "buy" if p(fund.get('Recom')) <= 2.5 else "hold",
+            "recommendation": recommendation,
             "target_mean_price": p(fund.get('Target Price')),
             "volume": p(fund.get('Volume')),
             "average_volume": p(fund.get('Avg Volume')),
@@ -101,10 +154,13 @@ def fetch_company_info(symbol):
             "short_ratio": short_ratio,
             "insider_buying_cluster": (insider_trans is not None and insider_trans > 0),
             # Quality Engine
-            "fcf_yield": (1 / p(fund.get('P/FCF'))) if p(fund.get('P/FCF')) else None,
+            "fcf_yield": fcf_yield,
             "gross_margins": (p(fund.get('Gross Margin')) / 100) if p(fund.get('Gross Margin')) else None,
             "altman_z": altman_z,
             "surprises": [], 
+            # Biotech / Growth Specific
+            "months_runway": months_runway,
+            "monthly_burn": monthly_burn,
             # Edge Engine
             "vix_level": fetch_vix_level(),
             "sector_rotation": fetch_sector_rotation(fund.get('Sector', 'Unknown')), 

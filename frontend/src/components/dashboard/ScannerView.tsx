@@ -3,6 +3,27 @@ import { Card, CardContent } from "../ui";
 import { ScannerResult } from "../../types";
 import { Search, Play, Check, Square, CheckSquare, ArrowUpDown, Star, Zap, Rocket } from "lucide-react";
 
+interface ScannerViewProps {
+  data: ScannerResult[] | null;
+  scanning: boolean;
+  onScan: (force: boolean, signal?: string | null) => void;
+  onAnalyze: (t: string) => void;
+  search: string;
+  setSearch: (v: string) => void;
+  maxRsi: number;
+  setMaxRsi: (v: number) => void;
+  minRelVol: number;
+  setMinRelVol: (v: number) => void;
+  onlyStrongBuy: boolean;
+  setOnlyStrongBuy: (v: boolean) => void;
+  onlyGoldenSetup: boolean;
+  setOnlyGoldenSetup: (v: boolean) => void;
+  sortConfig: { key: keyof ScannerResult; direction: 'asc' | 'desc' };
+  setSortConfig: (v: any) => void;
+  currentSignal: string | null;
+  setSignal: (s: string | null) => void;
+}
+
 export const ScannerView = ({ 
   data, scanning, onScan, onAnalyze,
   search, setSearch,
@@ -11,23 +32,12 @@ export const ScannerView = ({
   onlyStrongBuy, setOnlyStrongBuy,
   onlyGoldenSetup, setOnlyGoldenSetup,
   sortConfig, setSortConfig,
-  currentSignal
-}: { 
-  data: ScannerResult[] | null, 
-  scanning: boolean, 
-  onScan: (force: boolean, signal?: string | null) => void, 
-  onAnalyze: (t: string) => void,
-  search: string, setSearch: (v: string) => void,
-  maxRsi: number, setMaxRsi: (v: number) => void,
-  minRelVol: number, setMinRelVol: (v: number) => void,
-  onlyStrongBuy: boolean, setOnlyStrongBuy: (v: boolean) => void,
-  onlyGoldenSetup: boolean, setOnlyGoldenSetup: (v: boolean) => void,
-  sortConfig: { key: keyof ScannerResult; direction: 'asc' | 'desc' }, setSortConfig: (v: any) => void,
-  currentSignal: string | null
-}) => {
-
+  currentSignal,
+  setSignal
+}: ScannerViewProps) => {
   const isGoldenSetup = (r: ScannerResult) => {
-    return r.Recommendation === "Strong Buy" && r["Upside %"] > 15 && r["Rel Vol"] > 1.2 && r.RSI < 60;
+    // UPDATED: Match 'STRONG BUY' casing from backend
+    return r.Recommendation === "STRONG BUY" && r["Upside %"] > 15 && r["Rel Vol"] > 1.2 && r.RSI < 60;
   };
 
   const filteredData = useMemo(() => {
@@ -57,10 +67,11 @@ export const ScannerView = ({
       r.Ticker.includes(search.toUpperCase()) && 
       r.RSI <= maxRsi && 
       r["Rel Vol"] >= minRelVol &&
-      (!onlyStrongBuy || r.Recommendation === 'Strong Buy') &&
-      (!onlyGoldenSetup || isGoldenSetup(r))
+      (!onlyStrongBuy || r.Recommendation === 'STRONG BUY') &&
+      (!onlyGoldenSetup || isGoldenSetup(r)) &&
+      (currentSignal !== 'Vol. Squeeze' || r.is_squeeze)
     );
-  }, [data, search, maxRsi, minRelVol, onlyStrongBuy, onlyGoldenSetup, sortConfig]);
+  }, [data, search, maxRsi, minRelVol, onlyStrongBuy, onlyGoldenSetup, sortConfig, currentSignal]);
 
   const handleSort = (key: keyof ScannerResult) => {
     setSortConfig((current: any) => ({
@@ -88,13 +99,13 @@ export const ScannerView = ({
        {/* Market Scope Switcher */}
        <div className="grid grid-cols-2 gap-2 bg-[#0A0A0A] p-1 rounded-xl border border-zinc-800">
           <button 
-            onClick={() => onScan(true, null)}
+            onClick={() => setSignal(null)}
             className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${!isRocketMode ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
           >
             <span className="text-lg">🏢</span> S&P 500 Safe
           </button>
           <button 
-            onClick={() => onScan(true, 'ROCKET')}
+            onClick={() => setSignal('ROCKET')}
             className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${isRocketMode ? 'bg-rose-500/20 border border-rose-500/50 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.2)]' : 'text-zinc-500 hover:text-rose-400 hover:bg-rose-500/5'}`}
           >
             <span className="text-lg">🚀</span> Rocket Hunter
@@ -152,7 +163,7 @@ export const ScannerView = ({
             </button>
 
             <button 
-                onClick={() => onScan(true, currentSignal === 'Vol. Squeeze' ? null : 'Vol. Squeeze')}
+                onClick={() => setSignal(currentSignal === 'Vol. Squeeze' ? null : 'Vol. Squeeze')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${currentSignal === 'Vol. Squeeze' ? 'bg-orange-500/20 border-orange-500 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-zinc-900/50 border-zinc-700 text-zinc-500 hover:text-zinc-300'} ${isRocketMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={isRocketMode}
                 title={isRocketMode ? "Available in S&P 500 Mode" : "Filter by Volatility Squeeze"}
@@ -209,7 +220,7 @@ export const ScannerView = ({
                                     <span className="text-[7px] bg-yellow-500/10 text-yellow-500 px-1 rounded border border-yellow-500/20 font-black tracking-tighter">GOLDEN</span>
                                 </div>
                             )}
-                            {currentSignal === 'Vol. Squeeze' && (
+                            {r.is_squeeze && (
                                 <Zap className="w-2.5 h-2.5 text-orange-500 fill-current" />
                             )}
                         </td>

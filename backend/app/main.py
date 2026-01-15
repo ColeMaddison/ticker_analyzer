@@ -217,8 +217,8 @@ async def scanner_feed(filter_strong_buy: bool = False, signal: Optional[str] = 
 async def get_backtest(ticker: str):
     ticker = ticker.upper().strip()
     try:
-        # Fetch 1 year of data for backtesting
-        df = await asyncio.to_thread(fetch_ticker_data, ticker, period="1y")
+        # Fetch 2 years of data for backtesting (allows for SMA200 warmup)
+        df = await asyncio.to_thread(fetch_ticker_data, ticker, period="2y")
         if df is None or df.empty:
             raise HTTPException(status_code=404, detail="Ticker data not found")
             

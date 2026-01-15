@@ -16,15 +16,25 @@ def calculate_score(signals, info, ai_result, options_data=None, analyst_actions
     # --- 1. Technical Score (20%) ---
     t_points = 50
     rsi = signals.get('rsi', 50)
-    if signals.get('rsi_prev', 50) <= 40 and rsi > 40: t_points += 20 
+    smi = signals.get('smi', 0)
+    
+    # RSI Logic
+    if signals.get('rsi_prev', 50) <= 40 and rsi > 40: t_points += 20 # Bullish Reversal
+    if rsi > 70: t_points -= 10 # Overbought
+    
+    # Divergence
     if signals.get('macd_div'): t_points += 25 
     
-    # Trend Support (New)
+    # Trend Support
     close = signals.get('close', 0)
     sma50 = signals.get('sma_50', 0)
     if sma50 and close > sma50: t_points += 15
+    else: t_points -= 10 # Below Trend
     
-    if signals.get('smi', 0) < -40: t_points += 10
+    # SMI Logic (Stochastic Momentum)
+    if smi < -40: t_points += 15 # Oversold Bounce Opportunity
+    elif smi > 40: t_points -= 15 # Overbought / Exhaustion Risk
+    
     score_breakdown["technical_score"] = max(0, min(100, t_points))
 
     # --- 2. Momentum Score (10%) ---
@@ -47,9 +57,17 @@ def calculate_score(signals, info, ai_result, options_data=None, analyst_actions
     # --- 4. Quality Engine (20%) ---
     q_points = 50
     peg = info.get('peg_ratio')
+    runway = info.get('months_runway')
+    
     if peg is not None:
         if peg < 1.0: q_points += 20
         elif peg > 2.0: q_points -= 20
+    elif runway is not None:
+        # Biotech / Growth Fallback
+        if runway < 6: q_points = 0 # DILUTION IMMINENT / BANKRUPTCY RISK
+        elif runway < 12: q_points = 40 # Risky
+        elif runway > 18: q_points += 25 # Well Capitalized
+        
     surprises = info.get('surprises', [])
     if len(surprises) >= 4 and all(s['actual'] > s['estimate'] for s in surprises): q_points += 25
     if (info.get('fcf_yield', 0) or 0) > 0.05: q_points += 20
@@ -69,15 +87,18 @@ def calculate_score(signals, info, ai_result, options_data=None, analyst_actions
     for asset, data in macro_corrs.items():
         corr = data.get('value', 0)
         trend = data.get('trend', 'Neutral')
-        # Inverse correlation with falling yields/dollar is bullish for tech
         if corr < -0.6 and trend == "Falling": macro_boost += 10
-        # Positive correlation with rising market/btc
         elif corr > 0.6 and trend == "Rising": macro_boost += 10
-    
-    e_points += min(20, macro_boost) # Cap macro boost
+    e_points += min(20, macro_boost)
 
-    # News Velocity (3-sigma proxy)
-    if info.get('news_velocity', 0) > 0.8: e_points -= 20 # Overheated
+    # News Velocity & "Sell The News" Trap
+    velocity = info.get('news_velocity', 0)
+    if velocity > 0.8: 
+        # High news volume. Check if we are overbought.
+        if smi > 40 or rsi > 70:
+            e_points -= 30 # SELL THE NEWS TRAP!
+        else:
+            e_points -= 10 # Just overheated
     
     score_breakdown["edge_score"] = max(0, min(100, e_points))
 

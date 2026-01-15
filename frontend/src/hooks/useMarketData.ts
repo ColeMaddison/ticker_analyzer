@@ -60,7 +60,7 @@ export function useMarketData() {
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
-    scannerSignal,
+    scannerSignal, setScannerSignal,
     discoverySector, setDiscoverySector
   };
 }

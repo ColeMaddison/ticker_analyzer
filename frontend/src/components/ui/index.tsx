@@ -95,23 +95,69 @@ export const TabsContent = ({ children, value, className }: { children: React.Re
   return <div className={cn("mt-2", className)}>{children}</div>
 }
 
+import { createPortal } from "react-dom"
+
 // --- Tooltip Implementation ---
 
 export const Tooltip = ({ children, content }: { children: React.ReactNode, content: string }) => {
   const [visible, setVisible] = React.useState(false)
-  
+  const [coords, setCoords] = React.useState({ top: 0, left: 0 })
+  const triggerRef = React.useRef<HTMLDivElement>(null)
+  const [mounted, setVisibleMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setVisibleMounted(true)
+  }, [])
+
+  const updateCoords = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setCoords({
+        top: rect.top + window.scrollY,
+        left: rect.left + rect.width / 2 + window.scrollX
+      })
+    }
+  }
+
+  const handleMouseEnter = () => {
+    updateCoords()
+    setVisible(true)
+  }
+
+  React.useEffect(() => {
+    if (visible) {
+      window.addEventListener('scroll', updateCoords)
+      window.addEventListener('resize', updateCoords)
+    }
+    return () => {
+      window.removeEventListener('scroll', updateCoords)
+      window.removeEventListener('resize', updateCoords)
+    }
+  }, [visible])
+
   return (
     <div 
-      className="relative flex items-center"
-      onMouseEnter={() => setVisible(true)}
+      ref={triggerRef}
+      className="inline-flex items-center"
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setVisible(false)}
     >
       {children}
-      {visible && content && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-zinc-900 border border-zinc-700 rounded shadow-xl z-[100] text-[10px] font-medium leading-tight text-zinc-300 text-center animate-in fade-in zoom-in-95 duration-200">
-          {content}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-700" />
-        </div>
+      {visible && content && mounted && createPortal(
+        <div 
+          className="fixed z-[9999] pointer-events-none"
+          style={{ 
+            top: `${coords.top - 8}px`, 
+            left: `${coords.left}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="w-48 p-2 bg-zinc-900 border border-zinc-700 rounded shadow-2xl text-[10px] font-medium leading-tight text-zinc-300 text-center animate-in fade-in zoom-in-95 duration-200">
+            {content}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-700" />
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )

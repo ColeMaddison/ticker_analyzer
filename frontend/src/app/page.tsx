@@ -22,7 +22,7 @@ export default function Dashboard() {
     scannerOnlyStrongBuy, setScannerOnlyStrongBuy,
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
-    scannerSignal,
+    scannerSignal, setScannerSignal,
     discoverySector, setDiscoverySector
   } = useMarketData();
 
@@ -106,6 +106,7 @@ export default function Dashboard() {
               onlyGoldenSetup={scannerOnlyGoldenSetup} setOnlyGoldenSetup={setScannerOnlyGoldenSetup}
               sortConfig={scannerSortConfig} setSortConfig={setScannerSortConfig}
               currentSignal={scannerSignal}
+              setSignal={setScannerSignal}
             />
           </TabsContent>
 

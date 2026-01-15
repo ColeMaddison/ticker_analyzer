@@ -1,11 +1,11 @@
 import pandas as pd
 from finvizfinance.screener.custom import Custom
 from finvizfinance.screener.overview import Overview
-from finvizfinance.constants import signal_dict
+import finvizfinance.constants as constants
 
-# Manually inject the missing Volatility Squeeze signal
-if 'Volatility Squeeze' not in signal_dict:
-    signal_dict['Volatility Squeeze'] = 'ta_volatilitysqueeze'
+# MANUALLY INJECT missing signal into the library's constant dictionary
+if 'Volatility Squeeze' not in constants.signal_dict:
+    constants.signal_dict['Volatility Squeeze'] = 'ta_volatilitysqueeze'
 
 def get_sp500_tickers():
     """Placeholder."""
@@ -87,7 +87,6 @@ def scan_market(signal=None):
                     except: return 0
 
                 # Finviz Custom view returns these columns consistently
-                # We use .get() with the exact names we verified in debug
                 ticker = str(row.get('Ticker', 'N/A'))
                 mkt_cap = p(row.get('Market Cap', 0))
                 recom = p(row.get('Recom', 3.0))
@@ -98,21 +97,27 @@ def scan_market(signal=None):
                 
                 upside = ((target / price) - 1) * 100 if target > 0 and price > 0 else 0
 
-                # Map Numeric Rec (1.0-5.0) to Text
-                rec_text = "Hold"
+                # Veteran Verdict Logic (Aligned with Analyzer)
+                verdict = "WATCH"
                 if recom > 0:
-                    if recom <= 1.5: rec_text = "Strong Buy"
-                    elif recom <= 2.5: rec_text = "Buy"
-                    elif recom > 3.5: rec_text = "Sell"
+                    if recom <= 1.5 and rsi < 70: verdict = "STRONG BUY"
+                    elif recom <= 2.5 and rsi < 75: verdict = "BUY"
+                    elif recom > 4.0 or rsi > 80: verdict = "AVOID"
+
+                # Identify Squeeze:
+                # If we applied the signal, everything is a squeeze.
+                # If NOT, we use a proxy: Very low RSI + Low Volume usually precedes a breakout squeeze
+                is_sqz = (internal_signal == 'Volatility Squeeze') or (rsi < 35 and rel_vol < 0.8)
 
                 results.append({
                     "Ticker": ticker,
                     "Price": price,
                     "RSI": rsi,
                     "Rel Vol": rel_vol,
-                    "Recommendation": rec_text,
+                    "Recommendation": verdict,
                     "Upside %": round(float(upside), 1),
                     "Market Cap": mkt_cap,
+                    "is_squeeze": is_sqz
                 })
             except Exception as e:
                 print(f"Row error: {e}")

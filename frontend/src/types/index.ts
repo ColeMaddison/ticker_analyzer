@@ -1,7 +1,6 @@
 export interface TickerData {
   ticker: string;
   price: number;
-  info: any;
   metrics: {
     upside: number;
     sharpe: number;
@@ -44,6 +43,8 @@ export interface TickerData {
     vix_level: number;
     sector_rotation: string;
     news_velocity: number;
+    months_runway?: number;
+    monthly_burn?: number;
     [key: string]: any;
   };
   news: string[];
@@ -65,6 +66,8 @@ export interface DiscoveryTheme {
   summary: string;
   hype_score: number;
   tickers: string[];
+  sentiment: string;
+  verdict: string;
 }
 
 export interface ScannerResult {
@@ -76,6 +79,7 @@ export interface ScannerResult {
   "Upside %": number;
   Recommendation: string;
   "Market Cap": number;
+  is_squeeze?: boolean;
 }
 
 export interface CommodityItem {

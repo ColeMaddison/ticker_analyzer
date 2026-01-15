@@ -94,6 +94,7 @@ def analyze_market_trends(news_list):
     
     TASK:
     Identify 3-5 distinct "Market Themes" based on the valid financial news above.
+    Act as a "Veteran Discovery Agent" in 2026.
     
     For each theme:
     1. Title: Professional and descriptive (e.g., "Semiconductor Supply Chain Tightening").
@@ -101,6 +102,7 @@ def analyze_market_trends(news_list):
     3. Tickers: List specific stock symbols (e.g., "NVDA", "RIO", "JPM").
     4. Hype Score: 1-10 (10 = Everyone is talking about it).
     5. Sentiment: Bullish / Bearish / Neutral.
+    6. Verdict: "Strong Buy" / "Buy" / "Neutral" / "Avoid" (based on veteran risk/reward assessment).
 
     Return ONLY a JSON object:
     {{
@@ -110,7 +112,8 @@ def analyze_market_trends(news_list):
                 "summary": "...",
                 "tickers": ["..."],
                 "hype_score": 8,
-                "sentiment": "Bullish"
+                "sentiment": "...",
+                "verdict": "..."
             }}
         ]
     }}
