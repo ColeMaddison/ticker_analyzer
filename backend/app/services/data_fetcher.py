@@ -32,6 +32,75 @@ def fetch_ticker_data(ticker_symbol, period="1y", interval="1d"):
         print(f"Error fetching price history for {ticker_symbol}: {e}")
         return None
 
+def fetch_company_info_fallback(symbol):
+    """
+    Fallback method to fetch company info using yfinance when Finviz fails.
+    """
+    try:
+        t = yf.Ticker(symbol)
+        info = t.info
+        
+        # Map YF data to our schema
+        current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+        
+        # Rec
+        rec_key = info.get('recommendationKey', 'hold').lower()
+        recommendation = 'hold'
+        if 'buy' in rec_key: recommendation = 'buy'
+        if 'strong' in rec_key and 'buy' in rec_key: recommendation = 'strong_buy'
+        if 'sell' in rec_key: recommendation = 'sell'
+        
+        # Inst Own
+        inst_own = info.get('heldPercentInstitutions', 0)
+        
+        # FCF Yield Proxy: Operating Cash Flow / Market Cap
+        fcf_yield = None
+        ocf = info.get('operatingCashflow')
+        mkt_cap = info.get('marketCap')
+        if ocf and mkt_cap:
+             fcf_yield = ocf / mkt_cap
+             
+        # Altman Z Proxy
+        altman_z = info.get('altmanZScore')
+        if altman_z is None:
+             try:
+                bs = t.balance_sheet
+                if not bs.empty:
+                    total_liab = bs.loc['Total Liabilities Net Minority Interest'].iloc[0] if 'Total Liabilities Net Minority Interest' in bs.index else 0
+                    if total_liab > 0 and mkt_cap:
+                         altman_z = (mkt_cap / total_liab) * 0.6 + 1.0
+             except: pass
+        
+        return {
+            "symbol": symbol,
+            "current_price": current_price,
+            "previous_close": info.get('previousClose'),
+            "sector": info.get('sector', 'Unknown'),
+            "pe_ratio": info.get('trailingPE'),
+            "forward_pe": info.get('forwardPE'),
+            "peg_ratio": peg,
+            "market_cap": mkt_cap,
+            "recommendation": recommendation,
+            "target_mean_price": info.get('targetMeanPrice'),
+            "volume": info.get('volume'),
+            "average_volume": info.get('averageVolume'),
+            "institutions_percent": inst_own, 
+            "short_ratio": info.get('shortRatio'),
+            "insider_buying_cluster": False, # YF data limited
+            "fcf_yield": fcf_yield,
+            "gross_margins": info.get('grossMargins'),
+            "altman_z": info.get('altmanZScore'), 
+            "surprises": [], 
+            "months_runway": None,
+            "monthly_burn": None,
+            "vix_level": fetch_vix_level(),
+            "sector_rotation": fetch_sector_rotation(info.get('sector', 'Unknown')), 
+            "news_velocity": 0.5 # Default
+        }
+    except Exception as e:
+        print(f"YFinance Fallback Error for {symbol}: {e}")
+        return {}
+
 def fetch_company_info(symbol):
     """
     Fetches high-conviction decision data from Finviz with robust parsing.
@@ -167,8 +236,8 @@ def fetch_company_info(symbol):
             "news_velocity": news_velocity
         }
     except Exception as e:
-        print(f"Finviz Error for {symbol}: {e}")
-        return {}
+        print(f"Finviz Error for {symbol}: {e}. Switching to YFinance fallback.")
+        return fetch_company_info_fallback(symbol)
 
 def fetch_vix_level():
     try:
