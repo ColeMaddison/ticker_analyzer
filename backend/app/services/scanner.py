@@ -49,7 +49,6 @@ def scan_market(signal=None):
         
         # 2. Manual Pagination Loop
         # S&P 500 is ~503 companies. at 20 per page = 26 pages.
-        # If a signal is applied, there will be fewer pages.
         print(f"Fetching pages for signal: {internal_signal}...")
         for page in range(1, 27):
             try:
@@ -64,7 +63,7 @@ def scan_market(signal=None):
                     break
             except Exception as e:
                 print(f"Error on page {page}: {e}")
-                break # Stop if we hit an error to avoid infinite loops
+                break 
 
         if not all_frames:
             print("Scanner Error: No data returned from Finviz.")
@@ -73,8 +72,7 @@ def scan_market(signal=None):
         df = pd.concat(all_frames, ignore_index=True)
         print(f"Data retrieved. Count: {len(df)}")
 
-        # 3. Robust Column Mapping
-        # We map by name first, which is the most reliable method
+        # 3. Robust Column Mapping & Filtering
         results = []
         for _, row in df.iterrows():
             try:
@@ -86,15 +84,25 @@ def scan_market(signal=None):
                         return float(clean_val)
                     except: return 0
 
-                # Finviz Custom view returns these columns consistently
                 ticker = str(row.get('Ticker', 'N/A'))
                 mkt_cap = p(row.get('Market Cap', 0))
+                
+                # Double-Check Filters (Backend Enforcement)
+                # If ROCKET mode, ensure Small Cap (<2B)
+                if signal == 'ROCKET' and mkt_cap > 2.5e9: 
+                    continue # Skip leakages (like TSLA)
+
                 recom = p(row.get('Recom', 3.0))
                 rsi = p(row.get('RSI', 0))
                 rel_vol = p(row.get('Rel Volume', 1.0))
                 price = p(row.get('Price', 0))
                 target = p(row.get('Target Price', 0))
                 
+                # Sanity Check for Bad Data
+                if price < 0.1 and mkt_cap > 1e9:
+                     # Price likely missing or zero, try to use Target/Upside to infer? No, just skip or keep.
+                     pass
+
                 upside = ((target / price) - 1) * 100 if target > 0 and price > 0 else 0
 
                 # Veteran Verdict Logic (Aligned with Analyzer)

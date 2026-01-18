@@ -43,6 +43,7 @@ export interface TickerData {
     vix_level: number;
     sector_rotation: string;
     news_velocity: number;
+    fair_value?: number;
     months_runway?: number;
     monthly_burn?: number;
     [key: string]: any;

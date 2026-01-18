@@ -71,9 +71,18 @@ def fetch_company_info_fallback(symbol):
                          altman_z = (mkt_cap / total_liab) * 0.6 + 1.0
              except: pass
         
+        # PEG
+        peg = info.get('pegRatio')
+        
+        # Intrinsic Value Calculation (Peter Lynch Proxy: Fair PEG = 1.0)
+        fair_value = None
+        if peg and peg > 0 and current_price:
+            fair_value = current_price / peg
+
         return {
             "symbol": symbol,
             "current_price": current_price,
+            "fair_value": fair_value,
             "previous_close": info.get('previousClose'),
             "sector": info.get('sector', 'Unknown'),
             "pe_ratio": info.get('trailingPE'),
@@ -205,9 +214,17 @@ def fetch_company_info(symbol):
             elif recom_val <= 2.5: recommendation = "buy"
             elif recom_val > 3.5: recommendation = "sell"
 
+        # Intrinsic Value Calculation (Peter Lynch Proxy: Fair PEG = 1.0)
+        # If PEG < 1, Stock is Undervalued (Fair Price > Current Price)
+        # Formula: Fair Price = Current Price / PEG
+        fair_value = None
+        if peg and peg > 0 and price:
+            fair_value = price / peg
+
         return {
             "symbol": symbol,
             "current_price": price,
+            "fair_value": fair_value,
             "previous_close": p(fund.get('Prev Close')),
             "sector": fund.get('Sector', 'Unknown'),
             "pe_ratio": p(fund.get('P/E')),

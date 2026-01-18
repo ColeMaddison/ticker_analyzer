@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "../ui";
 import { AdvancedChart } from "../AdvancedChart";
 import { Zap, ShieldAlert, Brain, HelpCircle, CheckSquare, Square } from "lucide-react";
 import { parseMarkdown } from "../../lib/utils";
 import { TickerData } from "../../types";
 
-const Metric = ({ label, value, sub, tip, color = "text-white" }: any) => (
+const Metric = React.memo(({ label, value, sub, tip, color = "text-white" }: any) => (
   <Card className="bg-zinc-900/30 border-zinc-800/50 backdrop-blur-sm group hover:border-zinc-700 transition-all overflow-visible">
     <CardContent className="p-5 text-center relative">
       <div className="text-xs font-bold text-zinc-500 uppercase tracking-[0.1em] mb-2 flex justify-center items-center gap-1">
@@ -20,16 +20,16 @@ const Metric = ({ label, value, sub, tip, color = "text-white" }: any) => (
       {sub && <div className="text-[10px] font-bold text-zinc-600 mt-1 uppercase">{sub}</div>}
     </CardContent>
   </Card>
-);
+));
 
-const Row = ({ label, val }: any) => (
+const Row = React.memo(({ label, val }: any) => (
   <div className="flex justify-between items-center group py-1">
     <span className="text-xs font-bold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-300 transition-colors">{label}</span>
     <span className="font-mono text-sm font-bold text-white bg-zinc-800 px-2 py-0.5 rounded">{val}</span>
   </div>
-);
+));
 
-export const AnalysisView = ({ data, onTickerSelect, backtestResult, isBacktesting }: { data: TickerData, onTickerSelect: (t: string) => void, backtestResult: any, isBacktesting: boolean }) => {
+export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, isBacktesting }: { data: TickerData, onTickerSelect: (t: string) => void, backtestResult: any, isBacktesting: boolean }) => {
   const { score, score_breakdown: sb } = data;
   
   const beast = useMemo(() => {
@@ -267,6 +267,43 @@ export const AnalysisView = ({ data, onTickerSelect, backtestResult, isBacktesti
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             <div className="bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+              
+              {/* Fair Value Visualization */}
+              {data.info.fair_value && (
+                <div className="mb-3 border-b border-zinc-800/50 pb-3">
+                    <div className="flex justify-between items-center mb-1">
+                        <div className="text-[9px] uppercase font-bold text-zinc-500 flex items-center gap-1">
+                            Intrinsic Value
+                             <Tooltip content="Estimated Fair Value based on Peter Lynch's PEG=1.0 rule. If Price < Value, stock is undervalued relative to growth.">
+                                <HelpCircle className="w-2.5 h-2.5 text-zinc-700" />
+                            </Tooltip>
+                        </div>
+                        <span className={`text-[10px] font-black ${data.price < data.info.fair_value ? 'text-green-400' : 'text-red-400'}`}>
+                            {data.price < data.info.fair_value ? "UNDERVALUED" : "OVERVALUED"}
+                        </span>
+                    </div>
+                    
+                    <div className="relative h-1.5 bg-zinc-800 rounded-full w-full overflow-visible mt-2 mb-1">
+                        {/* Fair Value Tick (Blue) */}
+                        <div 
+                            className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-blue-500 z-10" 
+                            style={{ left: `${Math.min(100, (data.info.fair_value / (Math.max(data.price, data.info.fair_value)*1.15))*100)}%` }}
+                        />
+                        
+                        {/* Current Price Dot (White) */}
+                        <div 
+                            className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-zinc-900 shadow-lg z-20 ${data.price < data.info.fair_value ? 'bg-green-400' : 'bg-red-400'}`} 
+                            style={{ left: `${Math.min(100, (data.price / (Math.max(data.price, data.info.fair_value)*1.15))*100)}%` }}
+                        />
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider">Current: <span className="text-white">${data.price.toFixed(0)}</span></span>
+                        <span className="text-[8px] font-bold text-blue-500 uppercase tracking-wider">Fair: ${data.info.fair_value.toFixed(0)}</span>
+                    </div>
+                </div>
+              )}
+
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[9px] uppercase font-bold text-zinc-500">PEG Ratio</span>
                 <span className={`text-[10px] font-black ${data.info.peg_ratio == null ? 'text-zinc-600' : data.info.peg_ratio < 1 ? 'text-green-400' : data.info.peg_ratio > 2 ? 'text-red-400' : 'text-zinc-400'}`}>
@@ -531,4 +568,4 @@ export const AnalysisView = ({ data, onTickerSelect, backtestResult, isBacktesti
       </div>
     </div>
   );
-};
+});
