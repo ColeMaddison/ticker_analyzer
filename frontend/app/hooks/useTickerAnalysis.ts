@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { TickerData } from "../types";
 import { useToast } from "../components/ui";
 
@@ -11,11 +11,11 @@ export function useTickerAnalysis() {
   const [isBacktesting, setIsBacktesting] = useState(false);
   const { addToast } = useToast();
 
-  const runBacktest = async (ticker: string) => {
+  const runBacktest = useCallback(async (ticker: string) => {
     setIsBacktesting(true);
     setBacktestResult(null);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/backtest/${ticker}`);
+      const res = await fetch(`/api/backtest/${ticker}`);
       const result = await res.json();
       setBacktestResult(result);
     } catch (e) {
@@ -23,9 +23,9 @@ export function useTickerAnalysis() {
     } finally {
       setIsBacktesting(false);
     }
-  };
+  }, []);
 
-  const analyzeTicker = (ticker: string) => {
+  const analyzeTicker = useCallback((ticker: string) => {
     if (!ticker) return;
     
     setLoading(true); 
@@ -34,7 +34,7 @@ export function useTickerAnalysis() {
     setData(null);
     setBacktestResult(null);
 
-    const es = new EventSource(`http://127.0.0.1:8000/api/stream/analyze/${ticker}`);
+    const es = new EventSource(`/api/stream/analyze/${ticker}`);
     
     es.addEventListener("progress", (e: any) => {
       const d = JSON.parse(e.data);
@@ -65,7 +65,7 @@ export function useTickerAnalysis() {
       es.close(); 
       setLoading(false);
     });
-  };
+  }, [runBacktest, addToast]);
 
   return { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting };
 }

@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Line, Area, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine, Cell } from 'recharts';
 import { Layers, Activity } from 'lucide-react';
 
 export const AdvancedChart = ({ data }: { data: any[] }) => {
   const [timeRange, setTimeRange] = useState("1Y");
   const [chartType, setChartType] = useState<"line" | "area">("area");
+  const [mounted, setMounted] = useState(false);
 
-  if (!data || data.length === 0) return <div>No Chart Data</div>;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Filter Data based on Time Range (Zoom)
+  // Filter Data based on Time Range (Zoom) - Moved up to comply with Rules of Hooks
   const filteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
     // Approx trading days
     const ranges:Record<string, number> = {
       "1M": 21,
@@ -55,10 +60,13 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
     });
   }, [data, timeRange]);
 
-  const ranges = ["1M", "3M", "6M", "1Y", "ALL"];
-  
   // Performance Optimization: Disable heavy dots on long timeframes
   const showDots = filteredData.length < 100;
+
+  if (!data || data.length === 0) return <div>No Chart Data</div>;
+  if (!mounted) return <div className="h-[850px] bg-[#0A0A0A] rounded-lg border border-zinc-800" />;
+
+  const ranges = ["1M", "3M", "6M", "1Y", "ALL"];
 
   return (
     <div className="flex flex-col h-[850px] bg-[#0A0A0A] rounded-lg border border-zinc-800 p-4 relative">

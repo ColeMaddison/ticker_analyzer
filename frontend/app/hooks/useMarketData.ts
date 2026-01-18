@@ -23,10 +23,10 @@ export function useMarketData() {
     setScanning(true);
     setDiscoverySector(sector);
     try {
-      const url = new URL("http://127.0.0.1:8000/api/discovery");
+      const url = new URL("/api/discovery", "http://localhost");
       if (sector && sector !== "All") url.searchParams.append("sector", sector);
       
-      const res = await fetch(url.toString());
+      const res = await fetch(url.pathname + url.search);
       const json = await res.json();
       setDiscoveryData(json.themes);
     } catch (e) { console.error(e); }
@@ -38,10 +38,10 @@ export function useMarketData() {
     setScanning(true);
     setScannerSignal(signal);
     try {
-      const url = new URL("http://127.0.0.1:8000/api/scanner");
+      const url = new URL("/api/scanner", "http://localhost");
       if (signal) url.searchParams.append("signal", signal);
       
-      const res = await fetch(url.toString());
+      const res = await fetch(url.pathname + url.search);
       const json = await res.json();
       setScannerData(json);
     } catch (e) { console.error(e); }

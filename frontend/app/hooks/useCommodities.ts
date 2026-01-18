@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CommodityAnalysis, CommodityItem } from '../types';
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "/api";
 
 export function useCommodities() {
   const [commodities, setCommodities] = useState<CommodityItem[]>([]);

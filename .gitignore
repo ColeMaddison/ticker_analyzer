@@ -22,4 +22,5 @@ wheels/
 *.egg
 
 frontend/node_modules
+npm_cache
 frontend/.next

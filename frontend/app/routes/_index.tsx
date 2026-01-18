@@ -1,24 +1,21 @@
-"use client";
-
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger, Progress } from "../components/ui";
+import { useEffect, Suspense } from "react";
+import { useNavigate, useSearchParams } from "@remix-run/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger, Progress } from "~/components/ui";
 import { Activity } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { AnalysisView } from "../components/dashboard/AnalysisView";
-import { DiscoveryView } from "../components/dashboard/DiscoveryView";
-import { ScannerView } from "../components/dashboard/ScannerView";
-import { StrategyView } from "../components/dashboard/StrategyView";
-import { CommodityView } from "../components/dashboard/CommodityView";
-import { useTickerAnalysis } from "../hooks/useTickerAnalysis";
-import { useMarketData } from "../hooks/useMarketData";
+import { Navbar } from "~/components/Navbar";
+import { AnalysisView } from "~/components/dashboard/AnalysisView";
+import { DiscoveryView } from "~/components/dashboard/DiscoveryView";
+import { ScannerView } from "~/components/dashboard/ScannerView";
+import { StrategyView } from "~/components/dashboard/StrategyView";
+import { CommodityView } from "~/components/dashboard/CommodityView";
+import { useTickerAnalysis } from "~/hooks/useTickerAnalysis";
+import { useMarketData } from "~/hooks/useMarketData";
 
 function DashboardContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const tickerParam = searchParams.get("ticker");
 
-  // inputTicker state removed - now isolated in Navbar
   const { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting } = useTickerAnalysis();
   const { 
     discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner,
@@ -34,14 +31,14 @@ function DashboardContent() {
 
   // Effect to trigger analysis when URL ticker changes
   useEffect(() => {
-    if (tickerParam && tickerParam !== data?.info?.symbol) {
-      analyzeTicker(tickerParam);
+    if (tickerParam && !loading && tickerParam.toUpperCase() !== data?.ticker?.toUpperCase()) {
+      analyzeTicker(tickerParam.toUpperCase());
     }
-  }, [tickerParam]);
+  }, [tickerParam, analyzeTicker, data?.ticker, loading]);
 
   const handleAnalyze = (t: string) => {
     // Only update URL. The useEffect above will catch the change and trigger analysis.
-    router.push(`/?ticker=${t}`);
+    navigate(`/?ticker=${t.toUpperCase()}`);
   };
 
   return (
