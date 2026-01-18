@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger, Progress } from "../components/ui";
 import { Activity } from "lucide-react";
 import { Navbar } from "../components/Navbar";
@@ -12,7 +13,11 @@ import { CommodityView } from "../components/dashboard/CommodityView";
 import { useTickerAnalysis } from "../hooks/useTickerAnalysis";
 import { useMarketData } from "../hooks/useMarketData";
 
-export default function Dashboard() {
+function DashboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tickerParam = searchParams.get("ticker");
+
   // inputTicker state removed - now isolated in Navbar
   const { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting } = useTickerAnalysis();
   const { 
@@ -27,15 +32,23 @@ export default function Dashboard() {
     discoverySector, setDiscoverySector
   } = useMarketData();
 
+  // Effect to trigger analysis when URL ticker changes
+  useEffect(() => {
+    if (tickerParam && tickerParam !== data?.info?.symbol) {
+      analyzeTicker(tickerParam);
+    }
+  }, [tickerParam]);
+
   const handleAnalyze = (t: string) => {
-    analyzeTicker(t);
+    // Only update URL. The useEffect above will catch the change and trigger analysis.
+    router.push(`/?ticker=${t}`);
   };
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans antialiased selection:bg-green-500/20 pb-20">
       
       {/* Navbar Component */}
-      <Navbar onAnalyze={handleAnalyze} />
+      <Navbar onAnalyze={handleAnalyze} initialTicker={tickerParam || ""} />
 
       <main className="max-w-[1800px] mx-auto px-6 py-10">
         
@@ -109,5 +122,13 @@ export default function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-zinc-500 font-mono text-sm">LOADING TERMINAL...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Activity } from "lucide-react";
 
 interface NavbarProps {
@@ -8,6 +8,10 @@ interface NavbarProps {
 
 export const Navbar = ({ onAnalyze, initialTicker = "" }: NavbarProps) => {
   const [inputTicker, setInputTicker] = useState(initialTicker);
+
+  useEffect(() => {
+    setInputTicker(initialTicker);
+  }, [initialTicker]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
