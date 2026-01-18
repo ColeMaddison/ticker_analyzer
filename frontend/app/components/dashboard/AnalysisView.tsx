@@ -79,7 +79,13 @@ export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, 
   return (
     <div className="space-y-6">
       {/* 1. Global Metrics Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        <Metric 
+            label="Asset" 
+            value={data.ticker} 
+            color="text-green-500" 
+            tip={`Full Name: ${data.info.company_name || 'N/A'}\nSector: ${data.info.sector || 'N/A'}\nMkt Cap: $${(data.info.market_cap / 1e9).toFixed(2)}B\nBeta: ${data.info.beta?.toFixed(2) || 'N/A'}`} 
+        />
         <Metric label="Price" value={`$${data.price.toFixed(2)}`} tip="Current real-time price." />
         <Metric label="Rel Strength" value={`${(data.signals.rel_strength*100).toFixed(1)}%`} tip="Leader vs Laggard check. Stock performance vs its Sector ETF over 3 months." />
         <Metric label="ADX" value={data.signals.adx.toFixed(1)} tip="Average Directional Index. Measures trend strength. > 25 is strong, < 20 is choppy/non-trending." />

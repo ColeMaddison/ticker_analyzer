@@ -7,6 +7,7 @@ export function useTickerAnalysis() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [data, setData] = useState<TickerData | null>(null);
+  const [errorTicker, setErrorTicker] = useState<string | null>(null);
   const [backtestResult, setBacktestResult] = useState<any>(null);
   const [isBacktesting, setIsBacktesting] = useState(false);
   const { addToast } = useToast();
@@ -32,6 +33,7 @@ export function useTickerAnalysis() {
     setProgress(5); 
     setStatus(`Initializing analysis for ${ticker}...`); 
     setData(null);
+    setErrorTicker(null);
     setBacktestResult(null);
 
     const es = new EventSource(`/api/stream/analyze/${ticker}`);
@@ -52,12 +54,13 @@ export function useTickerAnalysis() {
     });
 
     es.addEventListener("error", (e: any) => {
+      setErrorTicker(ticker);
       try {
         if (e.data) {
             const d = JSON.parse(e.data);
             addToast(d.error || "An unknown error occurred", "error");
         } else {
-            addToast("Connection to backend failed", "error");
+            addToast(`Ticker ${ticker} not found or data source unavailable.`, "error");
         }
       } catch {
         addToast("Error communicating with backend", "error");
@@ -67,5 +70,5 @@ export function useTickerAnalysis() {
     });
   }, [runBacktest, addToast]);
 
-  return { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting };
+  return { data, loading, progress, status, analyzeTicker, errorTicker, backtestResult, isBacktesting };
 }

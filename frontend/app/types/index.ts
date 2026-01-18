@@ -37,6 +37,7 @@ export interface TickerData {
   };
   info: {
     recommendation: string;
+    company_name?: string;
     institutions_percent: number;
     insider_buying_cluster: boolean;
     short_ratio: number;

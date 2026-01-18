@@ -20,6 +20,12 @@ export default function handleRequest(
   remixContext: EntryContext,
   loadContext: AppLoadContext
 ) {
+  // Silent 404 for browser noise (Chrome DevTools, favicons, etc)
+  const url = new URL(request.url);
+  if (url.pathname.includes("com.chrome.devtools.json") || url.pathname.endsWith("favicon.ico")) {
+    return new Response(null, { status: 404 });
+  }
+
   return isbot(request.headers.get("user-agent") || "")
     ? handleBotRequest(
         request,

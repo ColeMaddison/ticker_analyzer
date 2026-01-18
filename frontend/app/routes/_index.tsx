@@ -12,11 +12,7 @@ import { useTickerAnalysis } from "~/hooks/useTickerAnalysis";
 import { useMarketData } from "~/hooks/useMarketData";
 
 function DashboardContent() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const tickerParam = searchParams.get("ticker");
-
-  const { data, loading, progress, status, analyzeTicker, backtestResult, isBacktesting } = useTickerAnalysis();
+  const { data, loading, progress, status, analyzeTicker, errorTicker, backtestResult, isBacktesting } = useTickerAnalysis();
   const { 
     discoveryData, scannerData, scanning, fetchDiscovery, fetchScanner,
     scannerSearch, setScannerSearch,
@@ -29,23 +25,15 @@ function DashboardContent() {
     discoverySector, setDiscoverySector
   } = useMarketData();
 
-  // Effect to trigger analysis when URL ticker changes
-  useEffect(() => {
-    if (tickerParam && !loading && tickerParam.toUpperCase() !== data?.ticker?.toUpperCase()) {
-      analyzeTicker(tickerParam.toUpperCase());
-    }
-  }, [tickerParam, analyzeTicker, data?.ticker, loading]);
-
   const handleAnalyze = (t: string) => {
-    // Only update URL. The useEffect above will catch the change and trigger analysis.
-    navigate(`/?ticker=${t.toUpperCase()}`);
+    analyzeTicker(t.toUpperCase());
   };
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans antialiased selection:bg-green-500/20 pb-20">
       
       {/* Navbar Component */}
-      <Navbar onAnalyze={handleAnalyze} initialTicker={tickerParam || ""} />
+      <Navbar onAnalyze={handleAnalyze} initialTicker="" />
 
       <main className="max-w-[1800px] mx-auto px-6 py-10">
         

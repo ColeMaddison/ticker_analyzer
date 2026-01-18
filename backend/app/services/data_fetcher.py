@@ -81,6 +81,7 @@ def fetch_company_info_fallback(symbol):
 
         return {
             "symbol": symbol,
+            "company_name": info.get('longName') or info.get('shortName') or symbol,
             "current_price": current_price,
             "fair_value": fair_value,
             "previous_close": info.get('previousClose'),
@@ -223,6 +224,7 @@ def fetch_company_info(symbol):
 
         return {
             "symbol": symbol,
+            "company_name": fund.get('Company', symbol),
             "current_price": price,
             "fair_value": fair_value,
             "previous_close": p(fund.get('Prev Close')),

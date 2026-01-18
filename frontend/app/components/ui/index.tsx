@@ -152,7 +152,7 @@ export const Tooltip = ({ children, content }: { children: React.ReactNode, cont
             transform: 'translate(-50%, -100%)'
           }}
         >
-          <div className="w-48 p-2 bg-zinc-900 border border-zinc-700 rounded shadow-2xl text-[10px] font-medium leading-tight text-zinc-300 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-48 p-2 bg-zinc-900 border border-zinc-700 rounded shadow-2xl text-[10px] font-medium leading-tight text-zinc-300 text-center animate-in fade-in zoom-in-95 duration-200 whitespace-pre-wrap">
             {content}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-700" />
           </div>
