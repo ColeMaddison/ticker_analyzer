@@ -152,7 +152,7 @@ async def stream_analysis(ticker: str, request: Request):
 
             # Format Chart Data for Lightweight Charts
             # Lightweight charts expect {time: 'YYYY-MM-DD', open: X, high: Y, low: Z, close: W}
-            chart_df = df_tech.reset_index().tail(150)
+            chart_df = df_tech.reset_index().tail(500)
             chart_df['time'] = chart_df['Date'].dt.strftime('%Y-%m-%d')
             chart_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'value'}, inplace=True)
             
