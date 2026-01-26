@@ -81,6 +81,7 @@ export const ScannerView = ({
   };
 
   const getRecColor = (rec: string) => {
+    if (!rec) return "text-zinc-400 bg-zinc-400/10 border-zinc-400/20";
     const r = rec.toLowerCase();
     if (r.includes('strong buy')) return "text-green-400 bg-green-400/10 border-green-400/20";
     if (r.includes('buy')) return "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
@@ -224,20 +225,20 @@ export const ScannerView = ({
                                 <Zap className="w-2.5 h-2.5 text-orange-500 fill-current" />
                             )}
                         </td>
-                        <td className="p-3 text-right font-mono font-medium text-zinc-400">${r.Price.toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono font-medium text-zinc-400">${r.Price?.toFixed(2) ?? "N/A"}</td>
                         <td className="p-3 text-center">
                             <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-black border ${getRecColor(r.Recommendation)}`}>
                                 {r.Recommendation}
                             </span>
                         </td>
                         <td className="p-3 text-center">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${r.RSI<30?"text-green-400 bg-green-400/10 animate-pulse":r.RSI>70?"text-red-400 bg-red-400/10":"text-zinc-500"}`}>
-                                {r.RSI.toFixed(0)}
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${!r.RSI ? "text-zinc-500" : r.RSI<30?"text-green-400 bg-green-400/10 animate-pulse":r.RSI>70?"text-red-400 bg-red-400/10":"text-zinc-500"}`}>
+                                {r.RSI?.toFixed(0) ?? "N/A"}
                             </span>
                         </td>
-                        <td className="p-3 text-center font-mono text-xs text-zinc-400">{r["Rel Vol"].toFixed(1)}x</td>
-                        <td className={`p-3 text-right font-mono font-bold ${r['Upside %']>0 ? 'text-blue-400' : 'text-zinc-600'}`}>
-                            {r['Upside %'] > 0 ? '+' : ''}{r['Upside %'].toFixed(1)}%
+                        <td className="p-3 text-center font-mono text-xs text-zinc-400">{r["Rel Vol"]?.toFixed(1) ?? "N/A"}x</td>
+                        <td className={`p-3 text-right font-mono font-bold ${!r['Upside %'] ? 'text-zinc-600' : r['Upside %']>0 ? 'text-blue-400' : 'text-zinc-600'}`}>
+                            {r['Upside %'] > 0 ? '+' : ''}{r['Upside %']?.toFixed(1) ?? "N/A"}%
                         </td>
                         <td className="p-3 text-right">
                             <button onClick={() => onAnalyze(r.Ticker)} className="text-[9px] font-black uppercase bg-zinc-900 hover:bg-green-600 hover:text-white text-zinc-400 border border-zinc-700 px-3 py-1.5 rounded transition-all">

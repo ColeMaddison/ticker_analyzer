@@ -72,6 +72,24 @@ export interface DiscoveryTheme {
   verdict: string;
 }
 
+export interface ScreenerPick {
+  symbol: string;
+  price: number;
+  change: number;
+  volume: number;
+}
+
+export interface ScreenerOpportunity {
+  strategy: string;
+  description: string;
+  picks: ScreenerPick[];
+}
+
+export interface DiscoveryResponse {
+  news_themes: DiscoveryTheme[];
+  screener_opportunities: ScreenerOpportunity[];
+}
+
 export interface ScannerResult {
   Rank: number;
   Ticker: string;

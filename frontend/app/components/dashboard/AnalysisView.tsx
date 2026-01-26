@@ -86,13 +86,13 @@ export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, 
             color="text-green-500" 
             tip={`Full Name: ${data.info.company_name || 'N/A'}\nSector: ${data.info.sector || 'N/A'}\nMkt Cap: $${(data.info.market_cap / 1e9).toFixed(2)}B\nBeta: ${data.info.beta?.toFixed(2) || 'N/A'}`} 
         />
-        <Metric label="Price" value={`$${data.price.toFixed(2)}`} tip="Current real-time price." />
+        <Metric label="Price" value={`$${data.price?.toFixed(2) ?? "N/A"}`} tip="Current real-time price." />
         <Metric label="Rel Strength" value={`${(data.signals.rel_strength*100).toFixed(1)}%`} tip="Leader vs Laggard check. Stock performance vs its Sector ETF over 3 months." />
-        <Metric label="ADX" value={data.signals.adx.toFixed(1)} tip="Average Directional Index. Measures trend strength. > 25 is strong, < 20 is choppy/non-trending." />
-        <Metric label="RSI" value={data.signals.rsi.toFixed(1)} tip="Relative Strength Index. We watch 40 as Bull Market Support and 60 as Bear Market Resistance." />
+        <Metric label="ADX" value={data.signals.adx?.toFixed(1) ?? "N/A"} tip="Average Directional Index. Measures trend strength. > 25 is strong, < 20 is choppy/non-trending." />
+        <Metric label="RSI" value={data.signals.rsi?.toFixed(1) ?? "N/A"} tip="Relative Strength Index. We watch 40 as Bull Market Support and 60 as Bear Market Resistance." />
         <Metric label="P/C Ratio" value={data.options_data?.pcr.toFixed(2) || "N/A"} tip="Put/Call Volume Ratio. > 1.2 suggests extreme fear (contrarian buy), < 0.6 suggests extreme greed (hedge/sell)." />
         <Metric label="Consensus" value={data.info.recommendation?.replace('_',' ').toUpperCase()} color="text-blue-400" tip="Wall Street analyst consensus rating." />
-        <Metric label="Upside" value={`${data.metrics.upside.toFixed(1)}%`} color={data.metrics.upside>0?"text-green-400":"text-red-400"} tip="Distance from current price to average analyst price target." />
+        <Metric label="Upside" value={`${data.metrics.upside?.toFixed(1) ?? "N/A"}%`} color={(data.metrics.upside || 0)>0?"text-green-400":"text-red-400"} tip="Distance from current price to average analyst price target." />
       </div>
 
       {/* 2. Primary Decision Maker Row */}
@@ -304,8 +304,8 @@ export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, 
                     </div>
                     
                     <div className="flex justify-between items-center">
-                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider">Current: <span className="text-white">${data.price.toFixed(0)}</span></span>
-                        <span className="text-[8px] font-bold text-blue-500 uppercase tracking-wider">Fair: ${data.info.fair_value.toFixed(0)}</span>
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider">Current: <span className="text-white">${data.price?.toFixed(0) ?? "N/A"}</span></span>
+                        <span className="text-[8px] font-bold text-blue-500 uppercase tracking-wider">Fair: ${data.info.fair_value?.toFixed(0) ?? "N/A"}</span>
                     </div>
                 </div>
               )}
@@ -469,8 +469,8 @@ export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, 
                                     </span>
                                 </div>
                                 <div className="flex items-end gap-2">
-                                    <div className={`text-xl font-black font-mono ${Math.abs(d.value) > 0.6 ? (isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-white') : 'text-zinc-400'}`}>
-                                        {d.value.toFixed(2)}
+                                    <div className={`text-xl font-black font-mono ${Math.abs(d.value || 0) > 0.6 ? (isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-white') : 'text-zinc-400'}`}>
+                                        {d.value?.toFixed(2) ?? "N/A"}
                                     </div>
                                     <div className="text-[8px] text-zinc-600 font-bold mb-1 uppercase tracking-tighter">Correlation</div>
                                 </div>
@@ -548,7 +548,7 @@ export const AnalysisView = React.memo(({ data, onTickerSelect, backtestResult, 
                             {selectedPeers.includes(p.Ticker) ? <CheckSquare className="w-2.5 h-2.5 text-green-500" /> : <Square className="w-2.5 h-2.5" />}
                         </button>
                         <span className="text-[11px] font-black text-zinc-300 cursor-pointer hover:text-green-400 transition-colors" onClick={() => onTickerSelect(p.Ticker)}>{p.Ticker}</span>
-                        <span className="text-[10px] font-mono font-bold text-white text-right">${p.Price.toFixed(2)}</span>
+                        <span className="text-[10px] font-mono font-bold text-white text-right">${p.Price?.toFixed(2) ?? "N/A"}</span>
                         <div className="text-center">
                             <span className={`text-[7px] px-1 py-0.5 rounded border font-bold uppercase ${getRecColor(p.Rec)}`}>{p.Rec}</span>
                         </div>

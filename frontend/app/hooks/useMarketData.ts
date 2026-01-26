@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { DiscoveryTheme, ScannerResult } from "../types";
+import { DiscoveryResponse, ScannerResult } from "../types";
 
 export function useMarketData() {
-  const [discoveryData, setDiscoveryData] = useState<DiscoveryTheme[] | null>(null);
+  const [discoveryData, setDiscoveryData] = useState<DiscoveryResponse | null>(null);
   const [scannerData, setScannerData] = useState<ScannerResult[] | null>(null);
   const [scanning, setScanning] = useState(false);
 
@@ -28,7 +28,7 @@ export function useMarketData() {
       
       const res = await fetch(url.pathname + url.search);
       const json = await res.json();
-      setDiscoveryData(json.themes);
+      setDiscoveryData(json);
     } catch (e) { console.error(e); }
     setScanning(false);
   };

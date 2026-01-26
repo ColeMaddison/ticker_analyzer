@@ -197,11 +197,11 @@ async def stream_analysis(ticker: str, request: Request):
 
     return EventSourceResponse(event_generator())
 
+from app.services.best_opportunities import get_combined_discovery
+
 @app.get("/api/discovery")
 async def discovery_feed(sector: Optional[str] = None):
-    raw_news = await asyncio.to_thread(fetch_market_buzz, sector=sector)
-    analysis = await asyncio.to_thread(analyze_market_trends, raw_news)
-    return analysis
+    return await get_combined_discovery(sector=sector)
 
 @app.get("/api/scanner")
 async def scanner_feed(filter_strong_buy: bool = False, signal: Optional[str] = None):
