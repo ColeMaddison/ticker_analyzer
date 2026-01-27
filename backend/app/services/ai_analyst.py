@@ -2,16 +2,57 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+import re
 
 load_dotenv()
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = os.getenv("OPENROUTER_MODEL", "upstage/solar-pro-3:free")
+MODEL = os.getenv("OPENROUTER_MODEL", "tngtech/deepseek-r1t-chimera:free")
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=API_KEY,
 )
+
+def extract_json(text):
+    """
+    Robustly extracts JSON from a string that might contain other text or code blocks.
+    """
+    if not text:
+        return None
+    
+    # Try literal JSON first
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except:
+        pass
+
+    # Try to find JSON in code blocks
+    code_block_match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+    if code_block_match:
+        try:
+            return json.loads(code_block_match.group(1))
+        except:
+            pass
+            
+    # Try generic code block
+    code_block_match = re.search(r'```\s*(.*?)\s*```', text, re.DOTALL)
+    if code_block_match:
+        try:
+            return json.loads(code_block_match.group(1))
+        except:
+            pass
+
+    # Try to find the first '{' and last '}'
+    bracket_match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
+    if bracket_match:
+        try:
+            return json.loads(bracket_match.group(1))
+        except:
+            pass
+            
+    return None
 
 def analyze_sentiment(ticker, headlines, social_news=None, technical_signals=None):
     """
@@ -96,11 +137,11 @@ def analyze_sentiment(ticker, headlines, social_news=None, technical_signals=Non
             temperature=0.3, 
         )
         
-        content = completion.choices[0].message.content.strip()
-        if content.startswith("```json"): content = content[7:]
-        if content.endswith("```"): content = content[:-3]
-        
-        return json.loads(content.strip())
+        result = extract_json(completion.choices[0].message.content)
+        if result:
+            return result
+        raise ValueError("Failed to extract valid JSON from AI response")
+
     except Exception as e:
         print(f"AI Analysis Error: {e}")
         return {
@@ -117,12 +158,11 @@ def identify_competitors(ticker):
         completion = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.1, 
+            temperature=0.1,
+            timeout=15 # Prevent hanging
         )
-        content = completion.choices[0].message.content.strip()
-        if content.startswith("```json"): content = content[7:]
-        if content.endswith("```"): content = content[:-3]
-        return json.loads(content.strip())[:3]
+        result = extract_json(completion.choices[0].message.content)
+        return result[:3] if isinstance(result, list) else []
     except: return []
 
 def analyze_commodity_strategy(commodity_name, technical_signals, macro_context, news):
@@ -215,11 +255,11 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
             temperature=0.3, 
         )
         
-        content = completion.choices[0].message.content.strip()
-        if content.startswith("```json"): content = content[7:]
-        if content.endswith("```"): content = content[:-3]
-        
-        return json.loads(content.strip())
+        result = extract_json(completion.choices[0].message.content)
+        if result:
+            return result
+        raise ValueError("Failed to extract valid JSON from AI response")
+
     except Exception as e:
         print(f"Commodity Analysis Error: {e}")
         return {

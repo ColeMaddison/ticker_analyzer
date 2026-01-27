@@ -155,12 +155,9 @@ def fetch_company_info(symbol):
                 altman_z = ticker.info.get('altmanZScore')
         except: pass
 
-        # EDGE LOGIC: News Velocity calculation
-        news_df = stock.ticker_news()
-        news_velocity = 0.1 # default
-        if not news_df.empty:
-            # Count headlines in the last 48 hours as a proxy for velocity
-            news_velocity = len(news_df) / 48 # Items per hour
+        # Altman Z-Score calculation removed heavy news velocity logic
+        # news_velocity = len(stock.ticker_news()) / 48  <- REMOVED FOR SPEED
+        news_velocity = 0.5 # Default static value
 
         # Extract PEG, Price, and FCF for logic and return
         peg = p(fund.get('PEG'))
@@ -313,17 +310,61 @@ def fetch_sector_benchmark(sector_name):
     etf = sector_map.get(sector_name, "SPY")
     return fetch_ticker_data(etf)
 
+def fetch_fundamentals_lean(symbol):
+    """
+    Lightweight fetcher for competitor/peer data.
+    Avoids heavy news scraping and runway analysis.
+    """
+    try:
+        # Use yfinance for speed in batch fetches if possible, 
+        # but stick to the established patterns.
+        # Actually, let's use finvizfinance but only for the fundamentals.
+        stock = finvizfinance(symbol)
+        fund = stock.ticker_fundament()
+        
+        def p(val):
+            if val is None or val == '-' or val == '': return None
+            try:
+                clean = str(val).replace('%', '').replace('$', '').replace(',', '')
+                if 'B' in clean: return float(clean.replace('B', '')) * 1e9
+                if 'M' in clean: return float(clean.replace('M', '')) * 1e6
+                return float(clean)
+            except: return None
+
+        recom_val = p(fund.get('Recom'))
+        recommendation = "hold"
+        if recom_val:
+            if recom_val <= 1.5: recommendation = "strong_buy"
+            elif recom_val <= 2.5: recommendation = "buy"
+            elif recom_val > 3.5: recommendation = "sell"
+
+        return {
+            "Ticker": symbol,
+            "Price": p(fund.get('Price')),
+            "P/E": p(fund.get('P/E')),
+            "Mkt Cap": p(fund.get('Market Cap')),
+            "Rec": recommendation
+        }
+    except:
+        return None
+
 def fetch_fundamentals_batch(tickers):
-    # For small batches, individual calls are fast with finvizfinance
+    """
+    Fetches peer data. 
+    Note: Called via asyncio.to_thread, but we can still optimize the loop.
+    """
+    import concurrent.futures
+    
     data = []
-    for t in tickers:
-        info = fetch_company_info(t)
-        if info:
-            data.append({
-                "Ticker": t, "Price": info.get("current_price"),
-                "P/E": info.get("pe_ratio"), "Mkt Cap": info.get("market_cap"),
-                "Rec": info.get("recommendation")
-            })
+    # Use a ThreadPoolExecutor for internal parallelism if not already in one
+    # This is safe because these are I/O bound network requests.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_ticker = {executor.submit(fetch_fundamentals_lean, t): t for t in tickers}
+        for future in concurrent.futures.as_completed(future_to_ticker):
+            ticker_data = future.result()
+            if ticker_data:
+                data.append(ticker_data)
+                
     return pd.DataFrame(data)
 
 def fetch_options_sentiment(symbol):
