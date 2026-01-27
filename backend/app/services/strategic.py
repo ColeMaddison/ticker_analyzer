@@ -97,8 +97,18 @@ async def get_strategic_analysis(ticker: str):
         if forward_pe < pe * 0.8: valuation_verdict = "Undervalued (Growth Exp)"
         elif forward_pe > pe * 1.2: valuation_verdict = "Overvalued (Shrink Exp)"
     
+    # 10. Calculate Final Verdict (0-100)
+    verdict_data = calculate_final_verdict({
+        "moat": {"roe": roe, "roic": roic, "fcf": fcf},
+        "smart_money": {"insider": insider_trans, "inst": inst_trans, "peg": peg, "pe": pe},
+        "safety": {"debt_eq": debt_eq},
+        "policy": {"catalysts": policy_catalysts},
+        "technicals": {"patterns": patterns, "signals": signals}
+    })
+
     return {
         "ticker": ticker,
+        "verdict": verdict_data,
         "moat": {
             "roe": roe,
             "roic": roic,
@@ -141,6 +151,61 @@ async def get_strategic_analysis(ticker: str):
                 "rsi": signals.get("rsi", 50)
             }
         }
+    }
+
+def calculate_final_verdict(data):
+    """
+    Computes a 0-100 score based on 5 categories.
+    Weights: Moat (25%), Smart Money & Value (25%), Safety (20%), Policy (15%), Technicals (15%)
+    """
+    scores = {}
+    
+    # 1. Moat (25 pts)
+    moat_score = 0
+    if data["moat"]["roe"] > 0.15: moat_score += 10
+    if data["moat"]["roic"] > 0.15: moat_score += 10
+    if data["moat"]["fcf"] > 0: moat_score += 5
+    scores["Moat Check"] = moat_score
+
+    # 2. Smart Money & Value (25 pts)
+    val_score = 0
+    if data["smart_money"]["insider"] > 0: val_score += 8
+    if data["smart_money"]["inst"] > 0: val_score += 7
+    peg = data["smart_money"]["peg"]
+    if 0 < peg < 1.2: val_score += 10
+    elif 0 < peg < 2.0: val_score += 5
+    scores["Smart Money & Value"] = val_score
+
+    # 3. Safety (20 pts)
+    safety_score = 0
+    debt = data["safety"]["debt_eq"]
+    if debt < 0.5: safety_score += 20
+    elif debt < 1.5: safety_score += 15
+    elif debt < 2.5: safety_score += 10
+    scores["Risk & Safety"] = safety_score
+
+    # 4. Policy & Trend (15 pts)
+    policy_score = 0
+    catalysts = data["policy"]["catalysts"]
+    bullish_count = len([c for c in catalysts if "Bullish" in c["direction"]])
+    if bullish_count >= 2: policy_score += 15
+    elif bullish_count == 1: policy_score += 10
+    else: policy_score += 5
+    scores["Policy & Trend"] = policy_score
+
+    # 5. Technicals (15 pts)
+    tech_score = 0
+    patterns = data["technicals"]["patterns"]
+    if patterns.get("Cup_Handle") or patterns.get("Double_Bottom"): tech_score += 10
+    if data["technicals"]["signals"].get("macd_bullish"): tech_score += 5
+    scores["Entry Patterns"] = tech_score
+
+    total_score = sum(scores.values())
+    
+    return {
+        "score": total_score,
+        "label": "BUY" if total_score >= 70 else "ACCUMULATE" if total_score >= 55 else "WATCH" if total_score >= 40 else "AVOID",
+        "breakdown": scores
     }
 
 def get_policy_catalysts(sector):
@@ -196,13 +261,15 @@ def get_magic_formula_list():
         
         # Get all S&P 500 companies (Limit > 505)
         # We sort by Market Cap to establish "Position in the Index"
-        df = f_overview.screener_view(order='Market Cap', limit=600, verbose=0)
+        # order parameter requires 'Market Cap.' (with dot)
+        df = f_overview.screener_view(order='Market Cap.', limit=600, verbose=0)
         
         results = []
         if df is not None and not df.empty:
-            # Finviz 'Market Cap' is usually already sorted descending if we pass 'Market Cap' 
-            # as order, but let's ensure it's sorted by Market Cap descending.
-            df = df.sort_values(by='Market Cap', ascending=False)
+            # Resulting DataFrame column is 'Market Cap' (no dot)
+            mc_col = 'Market Cap' if 'Market Cap' in df.columns else 'Market Cap.'
+            
+            df = df.sort_values(by=mc_col, ascending=False)
             
             for i, row in df.iterrows():
                 try:
@@ -218,7 +285,7 @@ def get_magic_formula_list():
 
                     pe = parse_float(row['P/E'])
                     price = parse_float(row['Price'])
-                    market_cap = parse_float(row['Market Cap'])
+                    market_cap = parse_float(row[mc_col])
                     
                     # Change might be string "1.5%" or float 0.015
                     change_val = row['Change']
