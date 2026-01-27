@@ -6,24 +6,37 @@ def fetch_screener_opportunities():
     """
     Fetches high-probability setups using specific Finviz filter combinations.
     Focuses on 'Veteran' setups: Oversold Quality, Volume Breakouts, and Trend Pullbacks.
+    Excludes 'junk' by enforcing Market Cap and Volume floors.
     """
     opportunities = []
     
     presets = [
         {
             "name": "Oversold Blue Chips",
-            "desc": "S&P 500 stocks with RSI < 30 (Extreme Fear). Potential mean reversion.",
+            "desc": "S&P 500 stocks with RSI < 30. Institutional mean reversion.",
             "filters": {'Index': 'S&P 500', 'RSI (14)': 'Oversold (30)'}
         },
         {
-            "name": "High Volume Breakouts",
-            "desc": "Stocks breaking out with 3x+ Relative Volume. Momentum play.",
-            "filters": {'Relative Volume': 'Over 3', 'Price': 'Over $10'}
+            "name": "Institutional Breakouts",
+            "desc": "Mid/Large Cap stocks breaking out with 3x+ Rel Vol & >1M Avg Vol.",
+            "filters": {
+                'Market Cap.': '+Mid (over $2B)', 
+                'Relative Volume': 'Over 3', 
+                'Average Volume': 'Over 1M',
+                'Price': 'Over $15',
+                'Change': 'Up'
+            }
         },
         {
-            "name": "Golden Trend Pullbacks",
-            "desc": "Strong Uptrend (SMA200) pulling back to SMA50 support.",
-            "filters": {'200-Day Simple Moving Average': 'Price above SMA200', '50-Day Simple Moving Average': 'Price below SMA50', 'RSI (14)': 'Not Overbought (<60)'}
+            "name": "Strategic Pullbacks",
+            "desc": "Quality uptrends (Price > SMA200) pulling back to SMA50 support.",
+            "filters": {
+                'Market Cap.': '+Mid (over $2B)',
+                '200-Day Simple Moving Average': 'Price above SMA200', 
+                '50-Day Simple Moving Average': 'Price below SMA50', 
+                'Average Volume': 'Over 750K',
+                'RSI (14)': 'Not Overbought (<60)'
+            }
         }
     ]
 
@@ -31,26 +44,38 @@ def fetch_screener_opportunities():
         try:
             foverview = Overview()
             foverview.set_filter(filters_dict=preset['filters'])
-            df = foverview.screener_view()
+            df = foverview.screener_view(verbose=0)
             
-            if not df.empty:
-                # Take top 5 sorted by Volume to ensure liquidity
+            if df is not None and not df.empty:
+                # Ensure we have required columns and handle potential name variations
+                # Finviz columns: Ticker, Price, Change, Volume
+                
+                # Take top 5 sorted by Volume to ensure highest liquidity
                 top_picks = df.sort_values(by='Volume', ascending=False).head(5)
                 
                 tickers = []
                 for _, row in top_picks.iterrows():
-                    tickers.append({
-                        "symbol": row['Ticker'],
-                        "price": row['Price'],
-                        "change": row['Change'],
-                        "volume": row['Volume']
-                    })
+                    try:
+                        # Parse values safely
+                        def safe_float(val):
+                            if isinstance(val, str):
+                                return float(val.strip('%').replace(',', ''))
+                            return float(val)
+
+                        tickers.append({
+                            "symbol": row['Ticker'],
+                            "price": safe_float(row['Price']),
+                            "change": safe_float(row['Change']),
+                            "volume": safe_float(row['Volume'])
+                        })
+                    except: continue
                 
-                opportunities.append({
-                    "strategy": preset['name'],
-                    "description": preset['desc'],
-                    "picks": tickers
-                })
+                if tickers:
+                    opportunities.append({
+                        "strategy": preset['name'],
+                        "description": preset['desc'],
+                        "picks": tickers
+                    })
         except Exception as e:
             print(f"Error fetching preset {preset['name']}: {e}")
             continue

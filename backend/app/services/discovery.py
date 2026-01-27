@@ -21,41 +21,43 @@ def fetch_market_buzz(sector=None):
     combined_results = []
     
     with DDGS() as ddgs:
-        # Targeted Sector Queries
+        # Targeted Sector Queries - Focus on "Smart Money" and "Professional Analysis"
         if sector and sector != "All":
             sector_queries = [
-                f"{sector} industry trends stock market analysis",
-                f"top moving stocks in {sector} sector today",
-                f"macro headwinds affecting {sector} companies",
-                f"institutional accumulation in {sector} stocks"
+                f"institutional accumulation in {sector} stocks analysis",
+                f"analyst consensus upgrades {sector} sector today",
+                f"major M&A activity and consolidation in {sector} industry",
+                f"earnings surprises and guidance shifts in {sector} companies"
             ]
         else:
             sector_queries = [
-                "semiconductor industry trends stock market",
-                "enterprise software market news analysis",
-                "mining and metals stock sector news",
-                "financial sector major movers today",
-                "industrial machinery stocks outlook"
+                "top institutional stock picks 2026 analysis",
+                "semiconductor and AI infrastructure market tailwinds",
+                "energy sector geopolitical risk premium analysis",
+                "financial sector interest rate sensitivity news",
+                "large cap software enterprise spending trends"
             ]
         
-        # Social/Retail Sentiment (Strictly Financial)
+        # High-Conviction "Fintwit" and Institutional Buzz (Filtering for quality)
         social_queries = [
-            f"most discussed {sector if sector and sector != 'All' else ''} stocks wallstreetbets investing",
-            f"fintwit trending {sector if sector and sector != 'All' else ''} tickers analysis"
+            f"institutional positioning {sector if sector and sector != 'All' else ''} stocks",
+            f"top professional trader watchlist {sector if sector and sector != 'All' else ''} tickers"
         ]
         
-        # Fetch Sector News (Mainstream)
+        # Fetch Sector News (Mainstream Financial)
         try:
             limit = 4 if sector and sector != "All" else 3
             for q in sector_queries[:limit]: 
                 results = ddgs.news(keywords=q, max_results=5)
                 if results:
                     for r in results:
-                        combined_results.append(f"[{sector if sector and sector != 'All' else 'Market'} News] {r.get('title')} ({r.get('source')})")
+                        # Stricter Source Check (Implicit via targeted queries, but we can add filter)
+                        title = r.get('title', '')
+                        combined_results.append(f"[Market Intelligence] {title} ({r.get('source')})")
         except Exception as e:
             print(f"Error fetching sector buzz: {e}")
 
-        # Fetch Social Buzz
+        # Fetch High-Signal Context
         try:
             for q in social_queries:
                 results = ddgs.text(keywords=q, max_results=5)
@@ -63,8 +65,10 @@ def fetch_market_buzz(sector=None):
                     for r in results:
                         title = r.get('title', '')
                         body = r.get('body', '')
-                        if any(x in (title + body).lower() for x in ['stock', 'market', 'trade', 'invest', 'price', 'nasdaq', 'nyse']):
-                            combined_results.append(f"[Retail Sentiment] {title}: {body[:100]}...")
+                        # Explicit noise filter
+                        if any(x in (title + body).lower() for x in ['stock', 'market', 'trade', 'invest', 'ticker', 'equity', 'bond', 'yield']):
+                            if not any(x in (title + body).lower() for x in ['football', 'premier league', 'celebrity', 'movie', 'concert']):
+                                combined_results.append(f"[Pro Sentiment] {title}: {body[:100]}...")
         except Exception as e:
             print(f"Error fetching social buzz: {e}")
         
@@ -72,8 +76,8 @@ def fetch_market_buzz(sector=None):
 
 def analyze_market_trends(news_list):
     """
-    Uses the LLM to cluster news into 'Buzzing Themes'.
-    Strictly filters for financial relevance.
+    Uses the LLM to cluster news into 'High-Conviction Themes'.
+    Strictly filters for professional financial relevance and high-quality assets.
     """
     if not news_list:
         return {"themes": []}
@@ -81,27 +85,27 @@ def analyze_market_trends(news_list):
     news_text = "\n".join(news_list[:25]) 
     
     prompt = f"""
-    You are a Wall Street Discovery Agent. Your job is to identify actionable market themes for a trader.
+    You are a Senior Wall Street Discovery Agent. Your job is to identify high-conviction, institutional-grade market themes.
     
     INPUT DATA:
     {news_text}
     
-    STRICT FILTERING RULES:
-    1. IGNORE all news related to: Sports (Football, Premier League), Music/Celebrities, Politics (unless directly moving markets), and General Lifestyle.
-    2. FOCUS ONLY on: Publicly Traded Companies, Economic Trends, Commodities (Minerals, Oil), Hardware/Software Tech, and Financial Markets.
-    3. If a news item is not about a tradeable asset or industry, DISCARD IT.
+    STRICT FILTERING & QUALITY RULES:
+    1. EXCLUDE: Penny stocks (micro-caps), sports, celebrities, general lifestyle, and noise.
+    2. IGNORE: "Meme stocks" unless there is a clear institutional fundamental shift.
+    3. FOCUS: Large/Mid Cap Companies, Macroeconomic Pivots, Sector Rotation, and Systematic Trends.
+    4. QUALITY CHECK: Only include tickers for established companies with professional analyst coverage.
     
     TASK:
-    Identify 3-5 distinct "Market Themes" based on the valid financial news above.
-    Act as a "Veteran Discovery Agent" in 2026.
+    Identify 3-5 distinct "Strategic Market Themes".
     
     For each theme:
-    1. Title: Professional and descriptive (e.g., "Semiconductor Supply Chain Tightening").
-    2. Summary: Why this matters to a trader.
-    3. Tickers: List specific stock symbols (e.g., "NVDA", "RIO", "JPM").
-    4. Hype Score: 1-10 (10 = Everyone is talking about it).
+    1. Title: Institutional and professional (e.g., "Hyperscale Cloud Infrastructure Expansion").
+    2. Summary: The fundamental "Why" behind the movement.
+    3. Tickers: List established symbols (e.g., "MSFT", "ASML", "JPM").
+    4. Hype Score: 1-10 (Institutional attention level).
     5. Sentiment: Bullish / Bearish / Neutral.
-    6. Verdict: "Strong Buy" / "Buy" / "Neutral" / "Avoid" (based on veteran risk/reward assessment).
+    6. Verdict: Professional recommendation (e.g., "Overweight", "Accumulate", "Underweight", "Monitor").
 
     Return ONLY a JSON object:
     {{
