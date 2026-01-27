@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "~/components/ui";
-import { ShieldAlert, TrendingUp, Microscope, Scale, Landmark, BrainCircuit, Rocket, Activity, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
+import { ShieldAlert, TrendingUp, Microscope, Scale, Landmark, BrainCircuit, Rocket, Activity, ChevronDown, ChevronUp, ArrowUpDown, Users, AlertTriangle, ChartBar } from "lucide-react";
 
 interface StrategicData {
   ticker: string;
@@ -9,6 +9,21 @@ interface StrategicData {
     roic: number;
     is_wonderful: boolean;
     owners_earnings: number;
+  };
+  smart_money: {
+    insider_trans: number;
+    inst_trans: number;
+    verdict: string;
+  };
+  valuation: {
+    pe: number;
+    forward_pe: number;
+    peg: number;
+    verdict: string;
+  };
+  safety: {
+    debt_to_equity: number;
+    is_safe: boolean;
   };
   magic_formula: {
     earnings_yield: number;
@@ -31,9 +46,11 @@ interface StrategicData {
 }
 
 interface MagicStock {
+  rank: number;
   ticker: string;
   price: number;
   pe: number;
+  market_cap: number;
   earnings_yield: number;
   sector: string;
 }
@@ -48,6 +65,12 @@ interface StrategicViewProps {
 type SortConfig = {
   key: keyof MagicStock | null;
   direction: 'asc' | 'desc';
+};
+
+const formatMarketCap = (val: number) => {
+    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
+    if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
+    return `$${(val / 1e6).toFixed(1)}M`;
 };
 
 export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, setAnalysisCache }: StrategicViewProps) => {
@@ -127,22 +150,22 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
   };
 
   const renderAnalysisContent = (data: StrategicData) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-zinc-950/50 rounded-lg border border-zinc-800/50 mt-2 animate-in fade-in slide-in-from-top-4 duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-zinc-950/50 rounded-lg border border-zinc-800/50 mt-2 animate-in fade-in slide-in-from-top-4 duration-300">
         {/* 1. Moat & Quality */}
         <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-blue-500">
             <CardHeader className="py-3"><CardTitle className="text-blue-400 flex items-center gap-2 text-base"><Landmark className="w-4 h-4"/> Moat Check</CardTitle></CardHeader>
             <CardContent className="space-y-3 py-3">
                 <div className="flex justify-between items-center text-sm">
                     <span>Return on Equity (ROE)</span>
-                    <span className={data.moat.roe > 0.15 ? "text-green-400 font-bold" : "text-zinc-500"}>{(data.moat.roe * 100).toFixed(1)}%</span>
+                    <span className={(data.moat.roe ?? 0) > 0.15 ? "text-green-400 font-bold" : "text-zinc-500"}>{(data.moat.roe ? data.moat.roe * 100 : 0).toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                     <span>Return on Invested Capital (ROIC)</span>
-                    <span className={data.moat.roic > 0.15 ? "text-green-400 font-bold" : "text-zinc-500"}>{(data.moat.roic * 100).toFixed(1)}%</span>
+                    <span className={(data.moat.roic ?? 0) > 0.15 ? "text-green-400 font-bold" : "text-zinc-500"}>{(data.moat.roic ? data.moat.roic * 100 : 0).toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between items-center border-t border-zinc-800 pt-2 text-sm">
                     <span>Owner's Earnings (Approx FCF)</span>
-                    <span className="font-mono text-white">${(data.moat.owners_earnings / 1e9).toFixed(2)}B</span>
+                    <span className="font-mono text-white">${((data.moat.owners_earnings ?? 0) / 1e9).toFixed(2)}B</span>
                 </div>
                 {data.moat.is_wonderful && (
                     <div className="bg-blue-500/20 text-blue-300 p-1.5 rounded text-center text-[10px] font-black uppercase tracking-widest mt-2">
@@ -152,7 +175,66 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
             </CardContent>
         </Card>
 
-        {/* 2. Policy & Catalysts */}
+        {/* 2. Smart Money & Valuation (NEW) */}
+        <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-emerald-500">
+            <CardHeader className="py-3"><CardTitle className="text-emerald-400 flex items-center gap-2 text-base"><Users className="w-4 h-4"/> Smart Money & Value</CardTitle></CardHeader>
+            <CardContent className="space-y-3 py-3">
+                <div className="flex justify-between items-center text-sm">
+                    <span>Insider Activity (6M)</span>
+                    <span className={(data.smart_money.insider_trans ?? 0) > 0 ? "text-green-400 font-bold" : (data.smart_money.insider_trans ?? 0) < -0.05 ? "text-red-400" : "text-zinc-500"}>
+                        {(data.smart_money.insider_trans ? data.smart_money.insider_trans * 100 : 0).toFixed(1)}%
+                    </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                    <span>Inst. Transactions (3M)</span>
+                    <span className={(data.smart_money.inst_trans ?? 0) > 0 ? "text-green-400 font-bold" : "text-zinc-500"}>
+                         {(data.smart_money.inst_trans ? data.smart_money.inst_trans * 100 : 0).toFixed(1)}%
+                    </span>
+                </div>
+                <div className="bg-zinc-900/50 p-2 rounded mt-2">
+                     <div className="flex justify-between text-xs mb-1">
+                        <span className="text-zinc-500">P/E vs Fwd P/E</span>
+                        <span className="text-zinc-300">{(data.valuation.pe ?? 0).toFixed(1)}x / <span className="text-emerald-400">{(data.valuation.forward_pe ?? 0).toFixed(1)}x</span></span>
+                     </div>
+                     <div className="flex justify-between text-xs">
+                        <span className="text-zinc-500">PEG Ratio</span>
+                        <span className={(data.valuation.peg ?? 0) < 1 ? "text-green-400 font-bold" : "text-zinc-400"}>{(data.valuation.peg ?? 0).toFixed(2)}</span>
+                     </div>
+                </div>
+                 <div className="text-center text-[10px] font-black uppercase tracking-widest text-emerald-600/80 mt-1">
+                    Verdict: {data.smart_money.verdict}
+                 </div>
+            </CardContent>
+        </Card>
+
+
+        {/* 3. Risk & Safety */}
+        <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-red-500">
+            <CardHeader className="py-3"><CardTitle className="text-red-400 flex items-center gap-2 text-base"><ShieldAlert className="w-4 h-4"/> Risk & Safety</CardTitle></CardHeader>
+            <CardContent className="space-y-3 py-3">
+                <div className="flex justify-between items-center text-sm">
+                    <span>Debt / Equity Ratio</span>
+                    <span className={data.safety.is_safe ? "text-green-400" : "text-red-500 font-bold"}>{(data.safety.debt_to_equity ?? 0).toFixed(2)}</span>
+                </div>
+                 {!data.safety.is_safe && (
+                    <div className="bg-red-500/10 border border-red-900/30 p-1.5 rounded flex items-center gap-2 text-red-400 text-xs">
+                        <AlertTriangle className="w-3 h-3"/> High Leverage Warning
+                    </div>
+                )}
+                
+                <div className="flex justify-between items-center text-sm border-t border-zinc-800 pt-2 mt-2">
+                    <span>Stop Loss (8%)</span>
+                    <span className="text-red-400 font-mono">${(data.risk.stop_loss_price ?? 0).toFixed(2)}</span>
+                </div>
+                
+                 <div className="bg-zinc-950 p-2 rounded border border-zinc-800 mt-1">
+                    <div className="text-[10px] uppercase text-zinc-600 font-black mb-1 flex items-center gap-1"><BrainCircuit className="w-3 h-3"/> Second-Level Thinking</div>
+                    <p className="text-xs italic text-zinc-400 leading-tight">"{data.risk.second_level_thought}"</p>
+                </div>
+            </CardContent>
+        </Card>
+
+        {/* 4. Policy & Catalysts */}
         <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-purple-500">
             <CardHeader className="py-3"><CardTitle className="text-purple-400 flex items-center gap-2 text-base"><Scale className="w-4 h-4"/> Policy & Trend</CardTitle></CardHeader>
             <CardContent className="space-y-3 py-3">
@@ -166,27 +248,8 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
             </CardContent>
         </Card>
 
-        {/* 3. Risk & Psychology */}
-        <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-red-500">
-            <CardHeader className="py-3"><CardTitle className="text-red-400 flex items-center gap-2 text-base"><ShieldAlert className="w-4 h-4"/> Risk Guardrails</CardTitle></CardHeader>
-            <CardContent className="space-y-3 py-3">
-                <div className="flex justify-between items-center text-sm">
-                    <span>Hard Stop Loss (8%)</span>
-                    <span className="text-red-400 font-mono">${data.risk.stop_loss_price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                    <span>Fear & Greed Proxy (VIX)</span>
-                    <span className="text-zinc-300">{data.risk.vix.toFixed(1)} ({data.risk.fear_greed_proxy})</span>
-                </div>
-                <div className="bg-zinc-950 p-2 rounded border border-zinc-800 mt-1">
-                    <div className="text-[10px] uppercase text-zinc-600 font-black mb-1 flex items-center gap-1"><BrainCircuit className="w-3 h-3"/> Second-Level Thinking</div>
-                    <p className="text-xs italic text-zinc-400 leading-tight">"{data.risk.second_level_thought}"</p>
-                </div>
-            </CardContent>
-        </Card>
-
-        {/* 4. Technical Fine-Tuning */}
-        <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-yellow-500">
+        {/* 5. Technical Fine-Tuning */}
+        <Card className="bg-zinc-900/30 border-zinc-800 border-l-4 border-l-yellow-500 col-span-1 md:col-span-2 lg:col-span-1">
             <CardHeader className="py-3"><CardTitle className="text-yellow-400 flex items-center gap-2 text-base"><Rocket className="w-4 h-4"/> Entry Patterns</CardTitle></CardHeader>
             <CardContent className="space-y-3 py-3">
                     <div className="grid grid-cols-2 gap-2">
@@ -212,6 +275,7 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+
       <div className="flex justify-between items-center">
         <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
@@ -271,7 +335,7 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
       <Card className="bg-zinc-900/30 border-zinc-800">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg text-purple-400">
-                <Microscope className="w-5 h-5" /> Top 50 Value & Quality (S&P 500)
+                <Microscope className="w-5 h-5" /> S&P 500 Strategic Matrix
             </CardTitle>
         </CardHeader>
         <CardContent>
@@ -279,11 +343,17 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
                 <table className="w-full text-sm text-left text-zinc-400">
                     <thead className="text-xs text-zinc-500 uppercase bg-zinc-900/50">
                         <tr>
+                            <th className="px-4 py-3 cursor-pointer hover:text-zinc-300 transition-colors group" onClick={() => handleSort('rank')}>
+                                <div className="flex items-center gap-1">Pos <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100"/></div>
+                            </th>
                             <th className="px-4 py-3 cursor-pointer hover:text-zinc-300 transition-colors group" onClick={() => handleSort('ticker')}>
                                 <div className="flex items-center gap-1">Ticker <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100"/></div>
                             </th>
                             <th className="px-4 py-3 cursor-pointer hover:text-zinc-300 transition-colors group" onClick={() => handleSort('price')}>
                                 <div className="flex items-center gap-1">Price <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100"/></div>
+                            </th>
+                            <th className="px-4 py-3 cursor-pointer hover:text-zinc-300 transition-colors group" onClick={() => handleSort('market_cap')}>
+                                <div className="flex items-center gap-1">Capitalization <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100"/></div>
                             </th>
                             <th className="px-4 py-3 cursor-pointer hover:text-zinc-300 transition-colors group" onClick={() => handleSort('pe')}>
                                 <div className="flex items-center gap-1">P/E Ratio <ArrowUpDown className="w-3 h-3 opacity-50 group-hover:opacity-100"/></div>
@@ -301,10 +371,12 @@ export const StrategicView = ({ discoveryList, setDiscoveryList, analysisCache, 
                         {sortedList.map((stock) => (
                             <>
                                 <tr key={stock.ticker} className={`hover:bg-zinc-800/30 transition-colors ${expandedTicker === stock.ticker ? "bg-zinc-800/20" : ""}`}>
+                                    <td className="px-4 py-3 font-mono text-zinc-500">#{stock.rank}</td>
                                     <td className="px-4 py-3 font-bold text-white">{stock.ticker}</td>
-                                    <td className="px-4 py-3">${stock.price.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-green-400">{stock.pe.toFixed(1)}x</td>
-                                    <td className="px-4 py-3">{(stock.earnings_yield * 100).toFixed(1)}%</td>
+                                    <td className="px-4 py-3">${stock.price?.toFixed(2) ?? "0.00"}</td>
+                                    <td className="px-4 py-3 font-mono text-xs">{formatMarketCap(stock.market_cap)}</td>
+                                    <td className="px-4 py-3 text-green-400">{stock.pe?.toFixed(1) ?? "0.0"}x</td>
+                                    <td className="px-4 py-3">{(stock.earnings_yield ? stock.earnings_yield * 100 : 0).toFixed(1)}%</td>
                                     <td className="px-4 py-3 text-xs opacity-70">{stock.sector}</td>
                                     <td className="px-4 py-3">
                                         <Button 

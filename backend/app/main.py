@@ -70,7 +70,7 @@ async def strategic_analysis_endpoint(ticker: str):
 @app.get("/api/strategic/discovery")
 async def strategic_discovery_endpoint():
     try:
-        result = await get_magic_formula_list()
+        result = await asyncio.to_thread(get_magic_formula_list)
         return convert_numpy(result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

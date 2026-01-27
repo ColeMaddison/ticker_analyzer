@@ -6,7 +6,7 @@ import json
 load_dotenv()
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = os.getenv("OPENROUTER_MODEL", "tngtech/deepseek-r1t2-chimera:free")
+MODEL = os.getenv("OPENROUTER_MODEL", "upstage/solar-pro-3:free")
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",

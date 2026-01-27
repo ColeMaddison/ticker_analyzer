@@ -5,6 +5,27 @@ from app.services.data_fetcher import fetch_company_info, fetch_news, fetch_vix_
 from app.services.technicals import calculate_technicals, get_latest_signals, detect_chart_patterns
 from finvizfinance.screener.financial import Financial
 from finvizfinance.screener.overview import Overview
+from finvizfinance.quote import finvizfinance
+
+def parse_finviz_float(val):
+    if not val or val == '-': return 0.0
+    if isinstance(val, (float, int)): return float(val)
+    # Remove % and ,
+    clean_val = val.replace('%', '').replace(',', '')
+    try:
+        return float(clean_val)
+    except:
+        return 0.0
+
+def parse_finviz_percent(val):
+    """Returns float 0.15 for '15%'"""
+    if not val or val == '-': return 0.0
+    if isinstance(val, (float, int)): return float(val) # Already float?
+    clean_val = val.replace('%', '').replace(',', '')
+    try:
+        return float(clean_val) / 100.0
+    except:
+        return 0.0
 
 async def get_strategic_analysis(ticker: str):
     """
@@ -12,11 +33,10 @@ async def get_strategic_analysis(ticker: str):
     """
     ticker = ticker.upper().strip()
     
-    # 1. Fetch Core Data
+    # 1. Fetch Core Data (YFinance)
     info = fetch_company_info(ticker)
     
     # 2. Fetch Technicals (for Patterns & Entry)
-    # We need history for patterns
     df = yf.Ticker(ticker).history(period="1y")
     if df is not None and not df.empty:
         df_tech = calculate_technicals(df)
@@ -26,42 +46,57 @@ async def get_strategic_analysis(ticker: str):
         signals = {}
         patterns = {"Cup_Handle": False, "Double_Bottom": False}
 
-    # 3. Wonderful Business Check (Moat)
-    # ROE > 15%, ROIC > 15% (Using ROI as proxy if ROIC missing)
-    # Finviz 'return_on_equity' is usually in 'info' if parsed correctly or we fetch specifically.
-    # fetch_company_info returns a dict. Let's see if we have ROE.
-    # We might need to fetch fundamental details if not present.
-    # The current fetch_company_info has limited fields. Let's rely on info or fetch fresh if needed.
+    # 3. Fetch Finviz Data (Detailed Fundamentals)
+    try:
+        fv_stock = finvizfinance(ticker)
+        fv_fund = fv_stock.ticker_fundament()
+    except Exception as e:
+        print(f"Finviz fetch failed for {ticker}: {e}")
+        fv_fund = {}
+
+    # 4. Moat & Quality
+    # Prefer Finviz data if available, fallback to YF info
+    roe = parse_finviz_percent(fv_fund.get('ROE')) if 'ROE' in fv_fund else (info.get('roe', 0) or 0)
+    roic = parse_finviz_percent(fv_fund.get('ROIC')) if 'ROIC' in fv_fund else (info.get('roic', 0) or 0)
     
-    # Let's try to get detailed fundamentals from yfinance for ROE/ROIC if missing
-    yf_info = yf.Ticker(ticker).info
-    roe = yf_info.get('returnOnEquity', 0)
-    roic = yf_info.get('returnOnInvestedCapital', 0) # often None in YF
-    if roic is None: roic = 0
-    
-    # 4. Owner's Earnings (Buffett)
-    # FCF = OCF - CapEx
+    # Owner's Earnings (Approx FCF)
     fcf = info.get('fcf_yield', 0) * info.get('market_cap', 1) if info.get('fcf_yield') else 0
     
-    # 5. Magic Formula Components (for this specific ticker)
-    # ROC & Earnings Yield
-    ebitda = yf_info.get('ebitda')
-    ev = yf_info.get('enterpriseValue')
-    earnings_yield = (ebitda / ev) if (ebitda and ev) else 0
+    # 5. Magic Formula Components
+    # Earnings Yield (EBITDA / EV) - Finviz doesn't give EBITDA/EV directly as a ratio, but has components?
+    # Actually Finviz has 'Earnings' (EPS) and 'Price'.
+    # We can use the simple inverse P/E from Finviz or stick to our calculated one.
+    # Let's rely on P/E from Finviz for consistency.
+    pe = parse_finviz_float(fv_fund.get('P/E'))
+    earnings_yield = (1.0 / pe) if pe > 0 else 0.0
     
-    # 6. Policy & Catalysts (Simulated/Keyword)
-    sector = info.get('sector', 'Unknown')
+    # 6. Policy & Catalysts
+    sector = fv_fund.get('Sector') or info.get('sector', 'Unknown')
     policy_catalysts = get_policy_catalysts(sector)
     
-    # 7. Risk (Stop Loss, Fear/Greed)
-    current_price = info.get('current_price', 0)
+    # 7. Risk
+    current_price = parse_finviz_float(fv_fund.get('Price')) or info.get('current_price', 0)
     stop_loss = current_price * 0.92 if current_price else 0
     vix = info.get('vix_level', 20)
     fear_greed = "Neutral"
     if vix < 15: fear_greed = "Extreme Greed"
     elif vix > 30: fear_greed = "Extreme Fear"
     
-    # 8. Construct Response
+    # 8. Smart Money (Insiders & Institutions)
+    insider_trans = parse_finviz_percent(fv_fund.get('Insider Trans')) # "12.5%" -> 0.125
+    inst_trans = parse_finviz_percent(fv_fund.get('Inst Trans'))
+    
+    # 9. Valuation & Safety
+    forward_pe = parse_finviz_float(fv_fund.get('Forward P/E'))
+    peg = parse_finviz_float(fv_fund.get('PEG'))
+    debt_eq = parse_finviz_float(fv_fund.get('Debt/Eq'))
+    
+    # Logic for Valuation Verdict
+    valuation_verdict = "Fair"
+    if pe > 0 and forward_pe > 0:
+        if forward_pe < pe * 0.8: valuation_verdict = "Undervalued (Growth Exp)"
+        elif forward_pe > pe * 1.2: valuation_verdict = "Overvalued (Shrink Exp)"
+    
     return {
         "ticker": ticker,
         "moat": {
@@ -72,7 +107,22 @@ async def get_strategic_analysis(ticker: str):
         },
         "magic_formula": {
             "earnings_yield": earnings_yield,
-            "roc_rank": "Top 10%" if earnings_yield > 0.08 else "Average" # Simplified rank for single view
+            "roc_rank": "Top 10%" if earnings_yield > 0.08 else "Average"
+        },
+        "smart_money": {
+            "insider_trans": insider_trans,
+            "inst_trans": inst_trans,
+            "verdict": "Accumulation" if (insider_trans > 0 or inst_trans > 0.02) else "Distribution" if (insider_trans < -0.1) else "Neutral"
+        },
+        "valuation": {
+            "pe": pe,
+            "forward_pe": forward_pe,
+            "peg": peg,
+            "verdict": valuation_verdict
+        },
+        "safety": {
+            "debt_to_equity": debt_eq,
+            "is_safe": debt_eq < 2.0
         },
         "policy": {
             "catalysts": policy_catalysts,
@@ -122,7 +172,7 @@ def generate_second_level_thought(ticker, sector, signals):
         return f"{ticker} is hated (RSI < 30). Is the business broken, or just the stock price?"
     return f"Consensus is neutral on {ticker}. What catalyst is the market missing in the {sector} sector?"
 
-async def get_magic_formula_list():
+def get_magic_formula_list():
     """
     Scans for Magic Formula candidates: High ROC + High Earnings Yield.
     Uses Finviz Financial Screener.
@@ -135,25 +185,26 @@ async def get_magic_formula_list():
         # Note: finvizfinance is synchronous and web-scraping based.
         # We perform a targeted scan.
         
-        # Filters: Index = S&P 500, ROE > 15%
+        # Filters: Index = S&P 500.
+        # Removed ROE filter to show all S&P 500 companies as requested.
         filters_dict = {
-            'Index': 'S&P 500',
-            'Return on Equity': 'Over +15%'
+            'Index': 'S&P 500'
         }
         
         f_overview = Overview()
         f_overview.set_filter(filters_dict=filters_dict)
         
-        # Get top 50 sorted by P/E (Lowest P/E = Highest Earnings Yield)
-        # 'P/E' is column index 2 in Overview? Or we use sort parameter.
-        # Overview columns are fixed.
-        
-        # Finviz sorting in library: order='Price/Earnings' (ascending)
-        df = f_overview.screener_view(order='Price/Earnings', limit=50, verbose=0)
+        # Get all S&P 500 companies (Limit > 505)
+        # We sort by Market Cap to establish "Position in the Index"
+        df = f_overview.screener_view(order='Market Cap', limit=600, verbose=0)
         
         results = []
         if df is not None and not df.empty:
-            for _, row in df.iterrows():
+            # Finviz 'Market Cap' is usually already sorted descending if we pass 'Market Cap' 
+            # as order, but let's ensure it's sorted by Market Cap descending.
+            df = df.sort_values(by='Market Cap', ascending=False)
+            
+            for i, row in df.iterrows():
                 try:
                     # Parse
                     ticker = row['Ticker']
@@ -167,6 +218,7 @@ async def get_magic_formula_list():
 
                     pe = parse_float(row['P/E'])
                     price = parse_float(row['Price'])
+                    market_cap = parse_float(row['Market Cap'])
                     
                     # Change might be string "1.5%" or float 0.015
                     change_val = row['Change']
@@ -175,21 +227,14 @@ async def get_magic_formula_list():
                     else:
                         change = float(change_val)
                     
-                    # Calculate simple Magic Score
-                    # Rank 1: Low P/E (High EY)
-                    # Rank 2: High ROE (High ROC) - We filtered for >15%
-                    
                     results.append({
+                        "rank": len(results) + 1, # Position in the index (by Market Cap)
                         "ticker": ticker,
                         "price": price,
                         "pe": pe,
+                        "market_cap": market_cap,
                         "earnings_yield": round(1/pe if pe > 0 else 0, 4),
-                        "momentum_6m": change, # Finviz change is daily. We lack 6m here without fetching details.
-                        # We will fetch 6m momentum for the top 10 candidates only to save time?
-                        # Or just use the daily change as a placeholder?
-                        # User wants 6 Month Momentum overlay.
-                        # We can't easily get 6m momentum from Overview.
-                        # Let's assume user accepts the list sorted by Value, and checks momentum in detail view.
+                        "momentum_6m": change, 
                         "sector": row['Sector']
                     })
                 except: continue
