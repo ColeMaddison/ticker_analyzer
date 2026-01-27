@@ -70,7 +70,79 @@ def calculate_technicals(df, sector_df=None):
     dn_vol = df['Volume'].where(~df['is_up'], 0).rolling(window=20).sum()
     df['Vol_Ratio'] = up_vol / (dn_vol + 1)
 
+    # 8. Chart Patterns
+    patterns = detect_chart_patterns(df)
+    for k, v in patterns.items():
+        df[k] = v
+
     return df
+
+def detect_chart_patterns(df, window=60):
+    """
+    Simplified pattern recognition for Cup & Handle and Double Bottom.
+    """
+    patterns = {"Cup_Handle": False, "Double_Bottom": False}
+    if len(df) < window: return patterns
+    
+    # Analyze the last 'window' days
+    subset = df.iloc[-window:].copy()
+    highs = subset['High'].values
+    lows = subset['Low'].values
+    closes = subset['Close'].values
+    
+    # Double Bottom (W Pattern)
+    # Logic: Two minima separated by a peak, with the second minima within 3% of first
+    # 1. Find local minima
+    min_indices = []
+    for i in range(2, len(lows)-2):
+        if lows[i] < lows[i-1] and lows[i] < lows[i-2] and lows[i] < lows[i+1] and lows[i] < lows[i+2]:
+            min_indices.append(i)
+            
+    if len(min_indices) >= 2:
+        # Check last two minima
+        idx1, idx2 = min_indices[-2], min_indices[-1]
+        val1, val2 = lows[idx1], lows[idx2]
+        
+        # Distance between bottoms (at least 10 days)
+        if (idx2 - idx1) > 10:
+             # Depth similarity (within 3%)
+             if abs(val1 - val2) / val1 < 0.03:
+                 # Check for peak in between
+                 peak_val = max(highs[idx1:idx2])
+                 # Current price breaking neck line?
+                 if closes[-1] > peak_val * 0.98: 
+                     patterns["Double_Bottom"] = True
+
+    # Cup and Handle
+    # Logic: U-shape (Cup) followed by small drift (Handle)
+    # Simplified: 
+    # 1. High point at start
+    # 2. Low point in middle
+    # 3. Return to High point
+    # 4. Small pullback (Handle)
+    
+    # Check for Handle (Last 5-10 days slightly down but low volume?)
+    # Check for Cup (Previous 30-50 days U shape)
+    
+    # Heuristic: Price is near 60-day high, but was low 30 days ago
+    recent_high = max(highs[-10:])
+    period_high = max(highs)
+    period_low = min(lows)
+    
+    # Near highs
+    if closes[-1] > period_high * 0.90:
+        # Was deep? (at least 15% drop)
+        if (period_high - period_low) / period_high > 0.15:
+            # Check shape roughly: First 1/3 high, Middle 1/3 low, Last 1/3 high
+            l = len(closes)
+            p1 = closes[:l//3].mean()
+            p2 = closes[l//3:2*l//3].mean()
+            p3 = closes[2*l//3:].mean()
+            
+            if p1 > p2 and p3 > p2:
+                 patterns["Cup_Handle"] = True
+
+    return patterns
 
 def calculate_squeeze_momentum(df, length=20, mult=2.0, length_kc=20, mult_kc=1.5):
     basis = df['Close'].rolling(window=length).mean()
@@ -121,5 +193,8 @@ def get_latest_signals(df):
         "r1": latest.get("R1"), "s1": latest.get("S1"),
         # New Context for AI
         "sma_50": latest.get("SMA_50", 0), "sma_200": latest.get("SMA_200", 0),
-        "bb_upper": latest.get("BB_Upper", 0), "bb_lower": latest.get("BB_Lower", 0)
+        "bb_upper": latest.get("BB_Upper", 0), "bb_lower": latest.get("BB_Lower", 0),
+        # Patterns
+        "double_bottom": bool(latest.get("Double_Bottom", False)),
+        "cup_handle": bool(latest.get("Cup_Handle", False))
     }

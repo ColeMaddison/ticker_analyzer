@@ -8,6 +8,7 @@ import { DiscoveryView } from "~/components/dashboard/DiscoveryView";
 import { ScannerView } from "~/components/dashboard/ScannerView";
 import { StrategyView } from "~/components/dashboard/StrategyView";
 import { CommodityView } from "~/components/dashboard/CommodityView";
+import { StrategicView } from "~/components/dashboard/StrategicView";
 import { useTickerAnalysis } from "~/hooks/useTickerAnalysis";
 import { useMarketData } from "~/hooks/useMarketData";
 
@@ -22,7 +23,9 @@ function DashboardContent() {
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
     scannerSignal, setScannerSignal,
-    discoverySector, setDiscoverySector
+    discoverySector, setDiscoverySector,
+    strategicData, setStrategicData,
+    strategicCache, setStrategicCache
   } = useMarketData();
 
   const handleAnalyze = (t: string) => {
@@ -55,7 +58,8 @@ function DashboardContent() {
               <TabsTrigger value="discovery" onClick={() => fetchDiscovery(false, discoverySector)} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
               <TabsTrigger value="scanner" onClick={() => fetchScanner()} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
               <TabsTrigger value="commodities" className="gap-2 font-bold text-xs uppercase px-4">🛢️ Commodities</TabsTrigger>
-              <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Strategy</TabsTrigger>
+              <TabsTrigger value="strategic" className="gap-2 font-bold text-xs uppercase px-4 text-purple-400">🚀 Rocket & Moat</TabsTrigger>
+              <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Guide</TabsTrigger>
             </TabsList>
           </div>
 
@@ -93,6 +97,15 @@ function DashboardContent() {
               sortConfig={scannerSortConfig} setSortConfig={setScannerSortConfig}
               currentSignal={scannerSignal}
               setSignal={setScannerSignal}
+            />
+          </TabsContent>
+
+          <TabsContent value="strategic">
+            <StrategicView 
+              discoveryList={strategicData}
+              setDiscoveryList={setStrategicData}
+              analysisCache={strategicCache}
+              setAnalysisCache={setStrategicCache}
             />
           </TabsContent>
 

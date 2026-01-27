@@ -18,6 +18,10 @@ export function useMarketData() {
 
   const [discoverySector, setDiscoverySector] = useState<string>("All");
 
+  // Strategic Data Persistence
+  const [strategicData, setStrategicData] = useState<any[] | null>(null);
+  const [strategicCache, setStrategicCache] = useState<Record<string, any>>({});
+
   const fetchDiscovery = async (force = false, sector: string = "All") => {
     if (discoveryData && !force && discoverySector === sector) return;
     setScanning(true);
@@ -61,6 +65,8 @@ export function useMarketData() {
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
     scannerSignal, setScannerSignal,
-    discoverySector, setDiscoverySector
+    discoverySector, setDiscoverySector,
+    strategicData, setStrategicData,
+    strategicCache, setStrategicCache
   };
 }

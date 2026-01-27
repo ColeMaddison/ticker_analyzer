@@ -19,6 +19,7 @@ from app.services.scanner import get_sp500_tickers, scan_market
 from app.services.backtester import run_beast_backtest
 from app.services.macro import calculate_macro_correlations
 from app.services.commodities import analyze_commodity, get_commodity_list
+from app.services.strategic import get_strategic_analysis, get_magic_formula_list
 
 app = FastAPI(title="Ticker Analyzer Pro API")
 
@@ -55,6 +56,24 @@ def convert_numpy(obj):
     elif pd.isna(obj): # Handle other pandas NA types
         return None
     return obj
+
+@app.get("/api/strategic/analysis/{ticker}")
+async def strategic_analysis_endpoint(ticker: str):
+    try:
+        result = await get_strategic_analysis(ticker)
+        return convert_numpy(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/strategic/discovery")
+async def strategic_discovery_endpoint():
+    try:
+        result = await get_magic_formula_list()
+        return convert_numpy(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/commodities")
 def get_commodities():
