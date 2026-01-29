@@ -82,6 +82,8 @@ def analyze_sentiment(ticker, headlines, social_news=None, technical_signals=Non
         - Current Price: {technical_signals.get('price', 'N/A')}
         - RSI (14): {technical_signals.get('rsi', 'N/A')}
         - Trend Strength (ADX): {technical_signals.get('adx', 'N/A')}
+        - Volume: {technical_signals.get('volume', 'N/A')}
+        - Relative Volume: {technical_signals.get('volume_ratio', 'N/A')} (vs 20d avg)
         - Put/Call Ratio: {technical_signals.get('pcr', 'N/A')}
         - Analyst Consensus: {technical_signals.get('consensus', 'N/A')}
         - Implied Upside: {technical_signals.get('upside', 'N/A')}%\n        

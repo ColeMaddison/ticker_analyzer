@@ -149,7 +149,9 @@ async def stream_analysis(ticker: str, request: Request):
                 "sma_200": f"${signals.get('sma_200', 0):.2f}",
                 "bb_lower": f"${signals.get('bb_lower', 0):.2f}",
                 "bb_upper": f"${signals.get('bb_upper', 0):.2f}",
-                "vwap_weekly": f"${signals.get('vwap_weekly', 0):.2f}"
+                "vwap_weekly": f"${signals.get('vwap_weekly', 0):.2f}",
+                "volume": f"{signals.get('volume', 0):,}",
+                "volume_ratio": f"{signals.get('volume_ratio', 1.0):.1f}x"
             }
 
             ai_result = await asyncio.to_thread(analyze_sentiment, ticker, headlines, social_news, tech_context)
