@@ -1,4 +1,5 @@
 import asyncio
+import time
 from finvizfinance.screener.overview import Overview
 from app.services.discovery import fetch_market_buzz, analyze_market_trends
 
@@ -12,36 +13,57 @@ def fetch_screener_opportunities():
     
     presets = [
         {
-            "name": "Oversold Blue Chips",
-            "desc": "S&P 500 stocks with RSI < 30. Institutional mean reversion.",
-            "filters": {'Index': 'S&P 500', 'RSI (14)': 'Oversold (30)'}
-        },
-        {
-            "name": "Institutional Breakouts",
-            "desc": "Mid/Large Cap stocks breaking out with 3x+ Rel Vol & >1M Avg Vol.",
+            "name": "Small Cap Rockets",
+            "desc": "High-velocity movers ($300M+) with >3x volume. Volatile but explosive.",
             "filters": {
-                'Market Cap.': '+Mid (over $2B)', 
+                'Market Cap.': '+Small (over $300mln)', 
                 'Relative Volume': 'Over 3', 
-                'Average Volume': 'Over 1M',
-                'Price': 'Over $15',
+                'Price': 'Over $5',
                 'Change': 'Up'
             }
         },
         {
-            "name": "Strategic Pullbacks",
-            "desc": "Quality uptrends (Price > SMA200) pulling back to SMA50 support.",
+            "name": "Short Squeeze Prime",
+            "desc": "High short interest (>20%) stocks seeing abnormal volume. Squeeze potential.",
             "filters": {
-                'Market Cap.': '+Mid (over $2B)',
-                '200-Day Simple Moving Average': 'Price above SMA200', 
-                '50-Day Simple Moving Average': 'Price below SMA50', 
-                'Average Volume': 'Over 750K',
-                'RSI (14)': 'Not Overbought (<60)'
+                'Float Short': 'Over 20%',
+                'Relative Volume': 'Over 1.5',
+                'Price': 'Over $5'
+            }
+        },
+        {
+            "name": "Aggressive Growth",
+            "desc": "Companies with >25% sales growth breaking out on volume.",
+            "filters": {
+                'Sales growthqtr over qtr': 'Over 25%',
+                'Relative Volume': 'Over 1.5',
+                'Price': 'Over $5',
+                '20-Day Simple Moving Average': 'Price above SMA20'
+            }
+        },
+        {
+            "name": "Oversold Blue Chips",
+            "desc": "S&P 500 stocks with RSI < 30. Institutional mean reversion plays.",
+            "filters": {'Index': 'S&P 500', 'RSI (14)': 'Oversold (30)'}
+        },
+        {
+            "name": "Institutional Breakouts",
+            "desc": "Mid-Caps breaking out with massive volume. Accumulation signatures.",
+            "filters": {
+                'Market Cap.': '+Mid (over $2bln)', 
+                'Relative Volume': 'Over 3', 
+                'Average Volume': 'Over 1M',
+                'Price': 'Over $15',
+                'Change': 'Up'
             }
         }
     ]
 
     for preset in presets:
         try:
+            # Respect rate limits
+            time.sleep(1.5)
+            
             foverview = Overview()
             foverview.set_filter(filters_dict=preset['filters'])
             df = foverview.screener_view(verbose=0)

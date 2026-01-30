@@ -18,9 +18,23 @@ export function useMarketData() {
 
   const [discoverySector, setDiscoverySector] = useState<string>("All");
 
+  // Doomsday Data
+  const [doomsdayData, setDoomsdayData] = useState<any | null>(null);
+
   // Strategic Data Persistence
   const [strategicData, setStrategicData] = useState<any[] | null>(null);
   const [strategicCache, setStrategicCache] = useState<Record<string, any>>({});
+
+  const fetchDoomsday = async (force = false) => {
+    if (doomsdayData && !force) return;
+    setScanning(true);
+    try {
+      const res = await fetch("/api/macro/doomsday");
+      const json = await res.json();
+      setDoomsdayData(json);
+    } catch (e) { console.error(e); }
+    setScanning(false);
+  };
 
   const fetchDiscovery = async (force = false, sector: string = "All") => {
     if (discoveryData && !force && discoverySector === sector) return;
@@ -65,8 +79,10 @@ export function useMarketData() {
     scannerOnlyGoldenSetup, setScannerOnlyGoldenSetup,
     scannerSortConfig, setScannerSortConfig,
     scannerSignal, setScannerSignal,
-    discoverySector, setDiscoverySector,
-    strategicData, setStrategicData,
-    strategicCache, setStrategicCache
-  };
-}
+        discoverySector, setDiscoverySector,
+        strategicData, setStrategicData,
+        strategicCache, setStrategicCache,
+        doomsdayData, fetchDoomsday
+      };
+    }
+    

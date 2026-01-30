@@ -1,4 +1,5 @@
 import pandas as pd
+import time
 from finvizfinance.screener.custom import Custom
 from finvizfinance.screener.overview import Overview
 import finvizfinance.constants as constants
@@ -52,6 +53,9 @@ def scan_market(signal=None):
         print(f"Fetching pages for signal: {internal_signal}...")
         for page in range(1, 27):
             try:
+                # Rate limit respect
+                time.sleep(1.0)
+                
                 # select_page returns 20 rows for that specific page
                 df_page = fcustom.screener_view(select_page=page, columns=custom_cols, verbose=0)
                 if df_page is not None and not df_page.empty:

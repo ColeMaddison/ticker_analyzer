@@ -17,7 +17,7 @@ from app.services.scorer import calculate_score, calculate_hedge_fund_score
 from app.services.discovery import fetch_market_buzz, analyze_market_trends
 from app.services.scanner import get_sp500_tickers, scan_market
 from app.services.backtester import run_beast_backtest
-from app.services.macro import calculate_macro_correlations
+from app.services.macro import calculate_macro_correlations, get_doomsday_score
 from app.services.commodities import analyze_commodity, get_commodity_list
 from app.services.strategic import get_strategic_analysis, get_magic_formula_list
 
@@ -85,6 +85,15 @@ async def get_commodity_analysis_endpoint(commodity_id: str):
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return convert_numpy(result)
+
+@app.get("/api/macro/doomsday")
+async def doomsday_clock_endpoint():
+    # Endpoint for recession probability
+    try:
+        result = await asyncio.to_thread(get_doomsday_score)
+        return convert_numpy(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/stream/analyze/{ticker}")
 async def stream_analysis(ticker: str, request: Request):

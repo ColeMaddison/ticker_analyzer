@@ -9,6 +9,7 @@ import { ScannerView } from "~/components/dashboard/ScannerView";
 import { StrategyView } from "~/components/dashboard/StrategyView";
 import { CommodityView } from "~/components/dashboard/CommodityView";
 import { StrategicView } from "~/components/dashboard/StrategicView";
+import { DoomsdayView } from "~/components/dashboard/DoomsdayView";
 import { useTickerAnalysis } from "~/hooks/useTickerAnalysis";
 import { useMarketData } from "~/hooks/useMarketData";
 
@@ -25,7 +26,8 @@ function DashboardContent() {
     scannerSignal, setScannerSignal,
     discoverySector, setDiscoverySector,
     strategicData, setStrategicData,
-    strategicCache, setStrategicCache
+    strategicCache, setStrategicCache,
+    doomsdayData, fetchDoomsday
   } = useMarketData();
 
   const handleAnalyze = (t: string) => {
@@ -55,10 +57,11 @@ function DashboardContent() {
           <div className="flex justify-center">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/50 p-1.5 backdrop-blur-sm scale-110 origin-top">
               <TabsTrigger value="analysis" className="gap-2 font-bold text-xs uppercase px-4">📈 Analysis</TabsTrigger>
-              <TabsTrigger value="discovery" onClick={() => fetchDiscovery(false, discoverySector)} className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
-              <TabsTrigger value="scanner" onClick={() => fetchScanner()} className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
+              <TabsTrigger value="discovery" className="gap-2 font-bold text-xs uppercase px-4">🔭 Discovery</TabsTrigger>
+              <TabsTrigger value="scanner" className="gap-2 font-bold text-xs uppercase px-4">🔍 Scanner</TabsTrigger>
               <TabsTrigger value="commodities" className="gap-2 font-bold text-xs uppercase px-4">🛢️ Commodities</TabsTrigger>
               <TabsTrigger value="strategic" className="gap-2 font-bold text-xs uppercase px-4 text-purple-400">🚀 Rocket & Moat</TabsTrigger>
+              <TabsTrigger value="doomsday" onClick={() => fetchDoomsday()} className="gap-2 font-bold text-xs uppercase px-4 text-red-500">💀 Doomsday</TabsTrigger>
               <TabsTrigger value="strategy" className="gap-2 font-bold text-xs uppercase px-4">📖 Guide</TabsTrigger>
             </TabsList>
           </div>
@@ -107,6 +110,10 @@ function DashboardContent() {
               analysisCache={strategicCache}
               setAnalysisCache={setStrategicCache}
             />
+          </TabsContent>
+
+          <TabsContent value="doomsday">
+            <DoomsdayView data={doomsdayData} />
           </TabsContent>
 
           <TabsContent value="strategy">

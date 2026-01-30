@@ -243,7 +243,7 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
         "supply_demand_analysis": "Markdown analysis. Reference BDI or specific supply constraints.",
         "geopolitical_risks": "Markdown list of key risks (Export controls, OPEC+, etc.).",
         "macro_outlook": "Analyze DXY, Real Yields, and Ratios here.",
-        "action_plan": "DETAILED STRATEGY: Entry, Stops, Targets (use markdown list)."
+        "action_plan": "DETAILED STRATEGY: \n- **Entry Zone:** [Price]\n- **Stop Loss:** [Price]\n- **Target 1:** [Price]\n- **Rationale:** [One sentence]"
     }}
     """
 
@@ -254,7 +254,7 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
                 {"role": "system", "content": "You are a commodities expert. Output valid JSON only."},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.3, 
+            temperature=0.4, 
         )
         
         result = extract_json(completion.choices[0].message.content)
@@ -270,6 +270,6 @@ def analyze_commodity_strategy(commodity_name, technical_signals, macro_context,
             "supply_demand_analysis": "Error in analysis.",
             "geopolitical_risks": "N/A",
             "macro_outlook": "N/A",
-            "action_plan": "Stand aside due to system error."
+            "action_plan": "Action Plan unavailable due to AI error."
         }
 

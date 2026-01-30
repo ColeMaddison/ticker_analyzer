@@ -64,20 +64,25 @@ export const TabsList = ({ children, className }: { children: React.ReactNode, c
   </div>
 )
 
-export const TabsTrigger = ({ children, value, className }: { children: React.ReactNode, value: string, className?: string }) => {
+export const TabsTrigger = ({ children, value, className, ...props }: { children: React.ReactNode, value: string, className?: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   const context = React.useContext(TabsContext)
   if (!context) throw new Error("TabsTrigger must be used within Tabs")
   
   const { activeTab, setActiveTab } = context
-  
+  const { onClick, ...rest } = props;
+
   return (
     <button
-      onClick={() => setActiveTab(value)}
+      onClick={(e) => {
+        setActiveTab(value);
+        if (onClick) onClick(e);
+      }}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
         activeTab === value ? "bg-zinc-800 text-zinc-100 shadow-sm" : "hover:text-zinc-200",
         className
       )}
+      {...rest}
     >
       {children}
     </button>

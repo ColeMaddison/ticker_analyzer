@@ -90,22 +90,22 @@ def analyze_market_trends(news_list):
     INPUT DATA:
     {news_text}
     
-    STRICT FILTERING & QUALITY RULES:
-    1. EXCLUDE: Penny stocks (micro-caps), sports, celebrities, general lifestyle, and noise.
-    2. IGNORE: "Meme stocks" unless there is a clear institutional fundamental shift.
-    3. FOCUS: Large/Mid Cap Companies, Macroeconomic Pivots, Sector Rotation, and Systematic Trends.
-    4. QUALITY CHECK: Only include tickers for established companies with professional analyst coverage.
+    FILTERING & QUALITY RULES:
+    1. EXCLUDE: Pure noise, celebrity gossip, and sports.
+    2. INCLUDES: Large Caps, High-Momentum Growth, Disruptive Innovators, and Tactical Opportunities.
+    3. FOCUS: Identify where the "Smart Money" is flowing (Volume + Price Strength).
+    4. QUALITY CHECK: Prioritize tickers with liquid markets and clear catalysts.
     
     TASK:
     Identify 3-5 distinct "Strategic Market Themes".
     
     For each theme:
-    1. Title: Institutional and professional (e.g., "Hyperscale Cloud Infrastructure Expansion").
+    1. Title: Actionable and professional (e.g., "AI Infrastructure Supercycle", "Biotech M&A Heating Up").
     2. Summary: The fundamental "Why" behind the movement.
-    3. Tickers: List established symbols (e.g., "MSFT", "ASML", "JPM").
+    3. Tickers: List high-velocity symbols (e.g., "NVDA", "PLTR", "SMCI") relevant to the theme.
     4. Hype Score: 1-10 (Institutional attention level).
     5. Sentiment: Bullish / Bearish / Neutral.
-    6. Verdict: Professional recommendation (e.g., "Overweight", "Accumulate", "Underweight", "Monitor").
+    6. Verdict: Actionable recommendation (e.g., "Strong Buy", "Aggressive Entry", "Tactical Long", "Accumulate", "Speculative Buy").
 
     Return ONLY a JSON object:
     {{

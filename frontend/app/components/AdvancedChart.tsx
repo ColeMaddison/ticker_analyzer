@@ -156,7 +156,7 @@ export const AdvancedChart = ({ data }: { data: any[] }) => {
             <CartesianGrid stroke="#333" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="date" hide />
             <YAxis domain={['auto', 'auto']} orientation="right" tick={{fontSize: 12, fill:'#a1a1aa'}} />
-            <YAxis yAxisId="volume" domain={['0', 'dataMax * 4']} orientation="left" hide />
+            <YAxis yAxisId="volume" domain={[0, (dataMax: number) => (dataMax || 1) * 4]} orientation="left" hide />
             <Tooltip animationDuration={300} contentStyle={{backgroundColor: '#111', border: '1px solid #333', color: '#fff', fontSize: '12px'}} itemStyle={{color: '#fff'}} />
             
             {/* Volume Bars */}
